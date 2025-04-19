@@ -85,7 +85,8 @@ def multiple_examples_page():
                 examples = [line.strip() for line in content.splitlines() if line.strip()]
                 input_format = "TXT"
 
-    output_format = st.radio("Choose output format", ["Same as input", "Plain text", "TXT", "CSV"], index=0)
+    output_format = st.radio("Choose output format",
+                             ["Same as input", "Plain text", "TXT", "CSV", "XLSX"], index=0)
 
     if st.button("Parse Examples"):
         if examples:
