@@ -9,10 +9,12 @@ from io import BytesIO
 WELCOME_PAGE = "welcome"
 HOME_PAGE = "home"
 CHAT_PAGE = "chat"
-SINGLE_EXAMPLE_PAGE = "single"
-MULTIPLE_EXAMPLES_PAGE = "multiple"
+SINGLE_MEMORY_PAGE = "single"
+MULTIPLE_MEMORIES_PAGE = "multiple"
 MANUAL_PAGE = "manual"
 
+# visuals
+# emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
 HOME_EMOJI = ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
 LLM_EMOJI = ":robot_face:"
@@ -81,39 +83,39 @@ def home_page():
     if columns[0].button("Chat with our LLM directly"):
         st.session_state.page = CHAT_PAGE
         st.rerun()
-    if columns[1].button("Code a single example"):
-        st.session_state.page = SINGLE_EXAMPLE_PAGE
+    if columns[1].button("Code a single memory"):
+        st.session_state.page = SINGLE_MEMORY_PAGE
         st.rerun()
-    if columns[2].button("Code multiple examples"):
-        st.session_state.page = MULTIPLE_EXAMPLES_PAGE
+    if columns[2].button("Code multiple memories"):
+        st.session_state.page = MULTIPLE_MEMORIES_PAGE
         st.rerun()
     if columns[3].button("Manually control the coding parameters"):
         st.session_state.page = MANUAL_PAGE
         st.rerun()
 
 
-def single_example_page():
-    st.title("Code a Single Example")
-    example_text = st.text_area("Paste your experiment summary")
+def single_memory_page():
+    st.title("Code a Single Memory")
+    memory_text = st.text_area("Paste the memory you want to code")
     if st.button("Code"):
-        result = parse_text(example_text)
-        st.subheader("Parsed Result")
+        result = parse_text(memory_text)
+        st.subheader("Coded Result")
         st.code(result, language=None)  # using st.code to have a built-in copy button
     if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = HOME_PAGE
         st.rerun()
 
 
-def multiple_examples_page():
-    st.title("Code Multiple Examples")
+def multiple_memories_page():
+    st.title("Code Multiple Memories")
 
     input_mode = st.radio("Choose input method", ["Paste text", "Upload file"])
-    examples = []
+    memories = []
 
     if input_mode == "Paste text":
-        multi_text = st.text_area("Paste multiple summaries, separated by line breaks")
+        multi_text = st.text_area("Paste multiple memories, separated by line breaks")
         if multi_text:
-            examples = [line.strip() for line in multi_text.splitlines() if line.strip()]
+            memories = [line.strip() for line in multi_text.splitlines() if line.strip()]
         input_format = "Plain text"
 
     else:  # input_mode == "Upload file":
@@ -122,23 +124,23 @@ def multiple_examples_page():
         if uploaded_file:
             if uploaded_file.name.endswith(".csv"):
                 df = pd.read_csv(uploaded_file)
-                examples = df.iloc[:, 0].dropna().astype(str).tolist()
+                memories = df.iloc[:, 0].dropna().astype(str).tolist()
                 input_format = "CSV"
             elif uploaded_file.name.endswith(".xlsx"):
                 df = pd.read_excel(uploaded_file)
-                examples = df.iloc[:, 0].dropna().astype(str).tolist()
+                memories = df.iloc[:, 0].dropna().astype(str).tolist()
                 input_format = "XLSX"
             else:  # ends with ".txt"
                 content = uploaded_file.read().decode("utf-8")
-                examples = [line.strip() for line in content.splitlines() if line.strip()]
+                memories = [line.strip() for line in content.splitlines() if line.strip()]
                 input_format = "TXT"
 
     output_format = st.radio("Choose output format",
                              ["Same as input", "Plain text", "TXT", "CSV", "XLSX"], index=0)
 
-    if st.button("Code Examples"):
-        if examples:
-            results = [parse_text(example) for example in examples]
+    if st.button("Code Memories"):
+        if memories:
+            results = [parse_text(memory) for memory in memories]
             if output_format == "Same as input":
                 output_format = input_format
             if output_format == "Plain text":
@@ -146,7 +148,7 @@ def multiple_examples_page():
                 displayed_results = "\n".join([f"{result}" for result in results])
                 st.code(displayed_results, language=None)  # same reason for st.code from previous
             else:
-                df = pd.DataFrame({"Input": examples, "Parsed Result": results})
+                df = pd.DataFrame({"Input": memories, "Parsed Result": results})
                 if output_format == "CSV":
                     csv = df.to_csv(index=False).encode("utf-8")
                     st.download_button("Download CSV", csv, "results.csv", "text/csv")
@@ -181,8 +183,8 @@ def chat_with_llm(user_message, history=None):
 
 def chat_page():
     st.title(f"Chat with the Lab's LLM {LLM_EMOJI}")
-    st.markdown("Welcome to the chat interface!  "
-                "Use this page to interact with our proprietary LLM.  "
+    st.markdown("Welcome to the chat interface!\n"
+                "Use this page to interact with our proprietary LLM.\n"
                 "Use :keyboard: ***Enter*** to send your message and get an answer.")
 
     # Initialize chat history if it doesn't exist
@@ -241,10 +243,10 @@ def main():
         home_page()
     elif page == CHAT_PAGE:
         chat_page()
-    elif page == SINGLE_EXAMPLE_PAGE:
-        single_example_page()
-    elif page == MULTIPLE_EXAMPLES_PAGE:
-        multiple_examples_page()
+    elif page == SINGLE_MEMORY_PAGE:
+        single_memory_page()
+    elif page == MULTIPLE_MEMORIES_PAGE:
+        multiple_memories_page()
     elif page == MANUAL_PAGE:
         manual_page()
 
