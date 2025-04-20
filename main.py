@@ -49,16 +49,30 @@ def welcome_page():
         st.warning("Please contact our lab for permissions.")
         st.stop()
 
-    api_key = st.text_input("Enter your key", type="password")
+    password = st.text_input("Enter your password", type="password")
 
-    if api_key:
+    if password:
         if st.button("Continue"):
-            st.session_state.user = selected_user
-            st.session_state.api_key = api_key
-            st.session_state.page = HOME_PAGE
-            st.rerun()
+            expected_password = st.secrets["passwords"].get(selected_user)
+            if expected_password and password == expected_password:
+                st.session_state.user = selected_user
+                st.session_state.page = HOME_PAGE
+                st.rerun()
+            else:
+                st.error("Incorrect password. Please try again.")
     else:
-        st.info("Enter your key to continue.")
+        st.info("Enter your password to continue.")
+
+    # api_key = st.text_input("Enter your key", type="password")
+    #
+    # if api_key:
+    #     if st.button("Continue"):
+    #         st.session_state.user = selected_user
+    #         st.session_state.api_key = api_key
+    #         st.session_state.page = HOME_PAGE
+    #         st.rerun()
+    # else:
+    #     st.info("Enter your key to continue.")
 
 
 def home_page():
