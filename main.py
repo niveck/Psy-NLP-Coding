@@ -156,6 +156,7 @@ def chat_page():
     st.title("Chat with the Lab's LLM")
     st.markdown("Welcome to the chat interface! Use this page to interact "
                 "with our proprietary LLM.")
+    st.info("There should be no SEND button!")
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
