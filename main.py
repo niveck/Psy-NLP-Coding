@@ -1,7 +1,20 @@
+import os
+
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 from io import BytesIO
+
+
+def get_api_key():
+    try:
+        api_key = st.secrets["TOGETHER_API_KEY"]
+    except KeyError:
+        try:
+            api_key = os.environ["TOGETHER_API_KEY"]
+        except KeyError:
+            raise KeyError("An API key is required to run this app.")
+    return api_key
 
 
 # Dummy parse_text function
@@ -9,9 +22,11 @@ def parse_text(text, api_key=None):
     # Replace this with your real implementation
     return f"Parsed result for: {text.strip()}"
 
+
 # Load authorized users from file
 def load_users():
     return Path("authorized_users.txt").read_text().splitlines()  # it strips whitespaces
+
 
 def welcome_page():
     st.title("Welcome to the Experiment Parser")
@@ -33,8 +48,12 @@ def welcome_page():
     else:
         st.info("Enter your key to continue.")
 
+
 def home_page():
     st.title("Experiment Parser Home")
+    if st.button("Chat with our LLM directly"):
+        st.session_state.page = "chat"
+        st.rerun()
     if st.button("Code a single example"):
         st.session_state.page = "single"
         st.rerun()
@@ -44,6 +63,7 @@ def home_page():
     if st.button("Manually control the coding parameters"):
         st.session_state.page = "manual"
         st.rerun()
+
 
 def single_example_page():
     st.title("Code a Single Example")
@@ -55,6 +75,7 @@ def single_example_page():
     if st.button("Back to Home"):
         st.session_state.page = "home"
         st.rerun()
+
 
 def multiple_examples_page():
     st.title("Code Multiple Examples")
@@ -117,12 +138,58 @@ def multiple_examples_page():
         st.session_state.page = "home"
         st.rerun()
 
+
 def manual_page():
     st.title("Manually Control the Coding Parameters")
     st.info("This page is still under construction...")
     if st.button("Back to Home"):
         st.session_state.page = "home"
         st.rerun()
+
+
+def chat_with_llm(user_message, history=None):
+    # Placeholder LLM call (replace with your real HuggingChat/LLM call)
+    return f"LLM: You said '{user_message}', and I’m responding intelligently."
+
+
+def chat_page():
+    st.title("Chat with the Lab's LLM")
+    st.markdown("Welcome to the chat interface! Use this page to interact "
+                "with our proprietary LLM.")
+
+    # Initialize chat history if it doesn't exist
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Display chat history
+    for message in st.session_state.chat_history:
+        if message["role"] == "user":
+            st.markdown(f"**You:** {message['content']}")
+        else:
+            st.markdown(f"**LLM:** {message['content']}")
+
+    # User input area
+    user_input = st.text_input("Your message:", key="chat_input")
+    if st.button("Send"):
+        if user_input.strip():
+            # Append user message to history
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+
+            # Call LLM and append its response
+            llm_response = chat_with_llm(user_input, history=st.session_state.chat_history)
+            st.session_state.chat_history.append({"role": "llm", "content": llm_response})
+
+            # Clear input field
+            st.session_state.chat_input = ""
+
+            # Rerun to show updated messages
+            st.rerun()
+
+    if st.button("Back to Home"):
+        st.session_state.page = "home"
+        st.session_state.chat_history = []  # Optional: clear chat on exit
+        st.rerun()
+
 
 # Entry point
 def main():
@@ -135,6 +202,8 @@ def main():
         welcome_page()
     elif page == "home":
         home_page()
+    elif page == "chat":
+        chat_page()
     elif page == "single":
         single_example_page()
     elif page == "multiple":

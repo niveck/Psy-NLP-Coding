@@ -6,3 +6,4 @@ transformers
 streamlit
 xlsxwriter
 openpyxl
+together
