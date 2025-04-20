@@ -5,8 +5,17 @@ from pathlib import Path
 from io import BytesIO
 
 
+# page names
+WELCOME_PAGE = "welcome"
+HOME_PAGE = "home"
+CHAT_PAGE = "chat"
+SINGLE_EXAMPLE_PAGE = "single"
+MULTIPLE_EXAMPLES_PAGE = "multiple"
+MANUAL_PAGE = "manual"
+
 HOME_EMOJI = ":house:"
-HOME_BUTTON_TEXT = f"{HOME_EMOJI} Home"
+HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
+LLM_EMOJI = ":robot_face:"
 
 
 def get_api_key():
@@ -46,38 +55,38 @@ def welcome_page():
         if st.button("Continue"):
             st.session_state.user = selected_user
             st.session_state.api_key = api_key
-            st.session_state.page = "home"
+            st.session_state.page = HOME_PAGE
             st.rerun()
     else:
         st.info("Enter your key to continue.")
 
 
 def home_page():
-    st.title(f"LLM-Assisted Coding {HOME_EMOJI}")
+    st.title(f"LLM-Assisted Coding - Home Page {HOME_EMOJI}")
     columns = st.columns(4)
     if columns[0].button("Chat with our LLM directly"):
-        st.session_state.page = "chat"
+        st.session_state.page = CHAT_PAGE
         st.rerun()
     if columns[1].button("Code a single example"):
-        st.session_state.page = "single"
+        st.session_state.page = SINGLE_EXAMPLE_PAGE
         st.rerun()
     if columns[2].button("Code multiple examples"):
-        st.session_state.page = "multiple"
+        st.session_state.page = MULTIPLE_EXAMPLES_PAGE
         st.rerun()
     if columns[3].button("Manually control the coding parameters"):
-        st.session_state.page = "manual"
+        st.session_state.page = MANUAL_PAGE
         st.rerun()
 
 
 def single_example_page():
     st.title("Code a Single Example")
     example_text = st.text_area("Paste your experiment summary")
-    if st.button("Parse"):
+    if st.button("Code"):
         result = parse_text(example_text, api_key=st.session_state.api_key)
         st.subheader("Parsed Result")
         st.code(result, language=None)  # using st.code to have a built-in copy button
     if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = "home"
+        st.session_state.page = HOME_PAGE
         st.rerun()
 
 
@@ -113,7 +122,7 @@ def multiple_examples_page():
     output_format = st.radio("Choose output format",
                              ["Same as input", "Plain text", "TXT", "CSV", "XLSX"], index=0)
 
-    if st.button("Parse Examples"):
+    if st.button("Code Examples"):
         if examples:
             results = [parse_text(example, api_key=st.session_state.api_key) for example in examples]
             if output_format == "Same as input":
@@ -139,7 +148,7 @@ def multiple_examples_page():
                 st.dataframe(df)
 
     if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = "home"
+        st.session_state.page = HOME_PAGE
         st.rerun()
 
 
@@ -147,20 +156,20 @@ def manual_page():
     st.title("Manually Control the Coding Parameters")
     st.info(":construction_worker: This page is still under construction...")
     if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = "home"
+        st.session_state.page = HOME_PAGE
         st.rerun()
 
 
 def chat_with_llm(user_message, history=None):
     # Placeholder LLM call (replace with your real HuggingChat/LLM call)
-    return f"LLM: You said '{user_message}', and I’m responding intelligently."
+    return f"You said '{user_message}', and I’m responding intelligently."
 
 
 def chat_page():
-    st.title("Chat with the Lab's LLM")
-    st.markdown("Welcome to the chat interface! Use this page to interact "
-                "with our proprietary LLM.")
-    st.info("There should be no SEND button!")
+    st.title(f"Chat with the Lab's LLM {LLM_EMOJI}")
+    st.markdown("Welcome to the chat interface!  "
+                "Use this page to interact with our proprietary LLM.  "
+                "Use :keyboard: ***Enter*** to send your message and get an answer.")
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
@@ -169,9 +178,9 @@ def chat_page():
     # Display chat history
     for message in st.session_state.chat_history:
         if message["role"] == "user":
-            st.markdown(f"**You:** {message['content']}")
+            st.markdown(f":blue-background[**You:**] {message['content']}")
         else:
-            st.markdown(f"**LLM:** {message['content']}")
+            st.markdown(f":violet-background[**LLM:**] {message['content']}")
 
     # User input area
     def submit():
@@ -208,21 +217,21 @@ def chat_page():
 # Entry point
 def main():
     if "page" not in st.session_state:
-        st.session_state.page = "welcome"
+        st.session_state.page = WELCOME_PAGE
 
     page = st.session_state.page
 
-    if page == "welcome":
+    if page == WELCOME_PAGE:
         welcome_page()
-    elif page == "home":
+    elif page == HOME_PAGE:
         home_page()
-    elif page == "chat":
+    elif page == CHAT_PAGE:
         chat_page()
-    elif page == "single":
+    elif page == SINGLE_EXAMPLE_PAGE:
         single_example_page()
-    elif page == "multiple":
+    elif page == MULTIPLE_EXAMPLES_PAGE:
         multiple_examples_page()
-    elif page == "manual":
+    elif page == MANUAL_PAGE:
         manual_page()
 
 if __name__ == "__main__":
