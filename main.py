@@ -43,7 +43,7 @@ def load_users():
 
 
 def welcome_page():
-    st.title("Welcome to the Experiment Parser")
+    st.title("Welcome to the Memory Coder")
     users = load_users()
     selected_user = st.selectbox("Select your user name", users + ["New user"])
 
