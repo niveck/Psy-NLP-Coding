@@ -1,9 +1,12 @@
 import os
-
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 from io import BytesIO
+
+
+HOME_EMOJI = ":house:"
+HOME_BUTTON_TEXT = f"{HOME_EMOJI} Home"
 
 
 def get_api_key():
@@ -50,17 +53,18 @@ def welcome_page():
 
 
 def home_page():
-    st.title("Experiment Parser Home")
-    if st.button("Chat with our LLM directly"):
+    st.title(f"LLM-Assisted Coding {HOME_EMOJI}")
+    columns = st.columns(4)
+    if columns[0].button("Chat with our LLM directly"):
         st.session_state.page = "chat"
         st.rerun()
-    if st.button("Code a single example"):
+    if columns[1].button("Code a single example"):
         st.session_state.page = "single"
         st.rerun()
-    if st.button("Code multiple examples"):
+    if columns[2].button("Code multiple examples"):
         st.session_state.page = "multiple"
         st.rerun()
-    if st.button("Manually control the coding parameters"):
+    if columns[3].button("Manually control the coding parameters"):
         st.session_state.page = "manual"
         st.rerun()
 
@@ -72,7 +76,7 @@ def single_example_page():
         result = parse_text(example_text, api_key=st.session_state.api_key)
         st.subheader("Parsed Result")
         st.code(result, language=None)  # using st.code to have a built-in copy button
-    if st.button("Back to Home"):
+    if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = "home"
         st.rerun()
 
@@ -134,15 +138,15 @@ def multiple_examples_page():
                     st.download_button("Download TXT", txt, "results.txt", "text/plain")
                 st.dataframe(df)
 
-    if st.button("Back to Home"):
+    if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = "home"
         st.rerun()
 
 
 def manual_page():
     st.title("Manually Control the Coding Parameters")
-    st.info("This page is still under construction...")
-    if st.button("Back to Home"):
+    st.info(":construction_worker: This page is still under construction...")
+    if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = "home"
         st.rerun()
 
@@ -195,7 +199,7 @@ def chat_page():
     # if st.button("Send"):  # TODO: trying with no button
     #     submit()
 
-    if st.button("Back to Home"):
+    if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = "home"
         st.session_state.chat_history = []  # Optional: clear chat on exit
         st.rerun()
