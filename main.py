@@ -174,10 +174,6 @@ def chat_page():
             st.session_state["user_input"] = ""
         st.session_state["user_input"] = st.session_state["chat_input"]
         st.session_state["chat_input"] = ""
-
-    # user_input = st.text_input("Your message:", key="chat_input", on_change=submit) # TODO maybe remove?
-    st.text_input("Your message:", key="chat_input", on_change=submit)
-    if st.button("Send"):
         user_input = st.session_state["user_input"]
         if user_input.strip():
             # Append user message to history
@@ -192,6 +188,11 @@ def chat_page():
 
             # Rerun to show updated messages
             st.rerun()
+
+    # user_input = st.text_input("Your message:", key="chat_input", on_change=submit) # TODO maybe remove?
+    st.text_input("Your message:", key="chat_input", on_change=submit)
+    if st.button("Send"):
+        submit()
 
     if st.button("Back to Home"):
         st.session_state.page = "home"
