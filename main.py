@@ -143,7 +143,7 @@ def multiple_examples_page():
                 output_format = input_format
             if output_format == "Plain text":
                 st.subheader("Results")
-                displayed_results = "\n".join([f"{i+1}. {res}" for i, res in enumerate(results)])
+                displayed_results = "\n".join([f"{result}" for result in results])
                 st.code(displayed_results, language=None)  # same reason for st.code from previous
             else:
                 df = pd.DataFrame({"Input": examples, "Parsed Result": results})
@@ -247,6 +247,7 @@ def main():
         multiple_examples_page()
     elif page == MANUAL_PAGE:
         manual_page()
+
 
 if __name__ == "__main__":
     main()
