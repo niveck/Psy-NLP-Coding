@@ -96,7 +96,7 @@ def single_example_page():
     st.title("Code a Single Example")
     example_text = st.text_area("Paste your experiment summary")
     if st.button("Code"):
-        result = parse_text(example_text, api_key=st.session_state.api_key)
+        result = parse_text(example_text)
         st.subheader("Parsed Result")
         st.code(result, language=None)  # using st.code to have a built-in copy button
     if st.button(HOME_BUTTON_TEXT):
@@ -138,7 +138,7 @@ def multiple_examples_page():
 
     if st.button("Code Examples"):
         if examples:
-            results = [parse_text(example, api_key=st.session_state.api_key) for example in examples]
+            results = [parse_text(example) for example in examples]
             if output_format == "Same as input":
                 output_format = input_format
             if output_format == "Plain text":
