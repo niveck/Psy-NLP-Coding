@@ -186,13 +186,13 @@ def chat_page():
             # # Clear input field  # TODO maybe remove?
             # st.session_state.chat_input = ""
 
-            # Rerun to show updated messages
-            st.rerun()
+            # # Rerun to show updated messages  # TODO trying with no rerun
+            # st.rerun()
 
     # user_input = st.text_input("Your message:", key="chat_input", on_change=submit) # TODO maybe remove?
     st.text_input("Your message:", key="chat_input", on_change=submit)
-    if st.button("Send"):
-        submit()
+    # if st.button("Send"):  # TODO: trying with no button
+    #     submit()
 
     if st.button("Back to Home"):
         st.session_state.page = "home"
