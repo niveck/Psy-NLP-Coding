@@ -169,8 +169,16 @@ def chat_page():
             st.markdown(f"**LLM:** {message['content']}")
 
     # User input area
-    user_input = st.text_input("Your message:", key="chat_input")
+    def submit():
+        if "user_input" not in st.session_state:
+            st.session_state["user_input"] = ""
+        st.session_state["user_input"] = st.session_state["chat_input"]
+        st.session_state["chat_input"] = ""
+
+    # user_input = st.text_input("Your message:", key="chat_input", on_change=submit) # TODO maybe remove?
+    st.text_input("Your message:", key="chat_input", on_change=submit)
     if st.button("Send"):
+        user_input = st.session_state["user_input"]
         if user_input.strip():
             # Append user message to history
             st.session_state.chat_history.append({"role": "user", "content": user_input})
@@ -179,9 +187,8 @@ def chat_page():
             llm_response = chat_with_llm(user_input, history=st.session_state.chat_history)
             st.session_state.chat_history.append({"role": "llm", "content": llm_response})
 
-            # Clear input field
-            input_value = st.session_state.chat_input  # TODO trying to get the value first
-            st.session_state.chat_input = ""
+            # # Clear input field  # TODO maybe remove?
+            # st.session_state.chat_input = ""
 
             # Rerun to show updated messages
             st.rerun()
