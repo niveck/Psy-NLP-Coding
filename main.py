@@ -180,7 +180,7 @@ def chat_page():
             st.session_state.chat_history.append({"role": "llm", "content": llm_response})
 
             # Clear input field
-            st.session_state.chat_input = ""
+            st.session_state["chat_input"] = ""
 
             # Rerun to show updated messages
             st.rerun()
