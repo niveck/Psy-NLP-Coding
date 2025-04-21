@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from io import BytesIO
 
+from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL
 
 # page names
 WELCOME_PAGE = "welcome"
@@ -271,8 +272,21 @@ def chat_page():
 
 # Entry point
 def debug_page():
+    """
+    check: st.dialog, st.help, st.feedback, st.chat_message, st.chat_input, st.balloons, st.snow, st.warning vs st.error
+    """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
-    st.markdown(":blue-background[:red[**Trying blue background and red text:**]] ***\\_int\\_ext\\_***")
+    st.info("Trying the color coding with the example output...")
+    result = EXAMPLE_OUTPUT_BY_FREE_MODEL
+    st.subheader("Coded result - color coded and highlighted")
+    st.caption(COLOR_CODING_LEGEND)
+    st.markdown(format_coded_result(result))
+    st.subheader("Coded result - as plain text with copy button")
+    st.code(result, language=None)
+
+    if st.button(HOME_BUTTON_TEXT):
+        st.session_state.page = HOME_PAGE
+        st.rerun()
 
 
 def main():
