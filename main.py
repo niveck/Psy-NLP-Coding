@@ -86,7 +86,7 @@ def page_bottom():
 
 
 def welcome_page():
-    st.title("Welcome to the Memory Coder")
+    st.title("Welcome to the Memory Coder &mdash; BETA")
     users = load_users()
     selected_user = st.selectbox("Select your user name", users + ["New user"])
 
@@ -125,16 +125,16 @@ def welcome_page():
 
 
 def home_page():
-    st.title(f"{HOME_EMOJI} LLM-Assisted Coding &mdash; Home Page")
+    st.title(f"{HOME_EMOJI} LLM-Assisted Coding &mdash; Home Page &mdash; BETA")
     columns = st.columns(4)
-    if columns[0].button(f"Chat with our LLM directly {LLM_EMOJI}"):
-        st.session_state.page = CHAT_PAGE
-        st.rerun()
-    if columns[1].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
+    if columns[0].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
         st.session_state.page = SINGLE_MEMORY_PAGE
         st.rerun()
-    if columns[2].button(f"Code multiple memories {MULTIPLE_MEMORIES_EMOJI}"):
+    if columns[1].button(f"Code multiple memories {MULTIPLE_MEMORIES_EMOJI}"):
         st.session_state.page = MULTIPLE_MEMORIES_PAGE
+        st.rerun()
+    if columns[2].button(f"Chat with our LLM directly {LLM_EMOJI}"):
+        st.session_state.page = CHAT_PAGE
         st.rerun()
     if columns[3].button(f"Manually control parameters {MANUAL_EMOJI}"):
         st.session_state.page = MANUAL_PAGE
@@ -320,6 +320,8 @@ def debug_page():
     """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
     st.info("Trying the color coding with the example output...")
+    st.caption(COLOR_CODING_LEGEND)
+    st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL))
 
     page_bottom()
 
