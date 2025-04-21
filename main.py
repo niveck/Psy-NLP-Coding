@@ -4,7 +4,6 @@ import pandas as pd
 from pathlib import Path
 from io import BytesIO
 
-from holoviews.examples.gallery.apps.bokeh.crossfilter import continuous
 
 # page names
 WELCOME_PAGE = "welcome"
