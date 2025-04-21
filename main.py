@@ -261,7 +261,7 @@ def chat_page():
 # Entry point
 def debug_page():
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
-    st.markdown(":blue-background[:red[**Trying blue background and red text:**]]")
+    st.markdown(":blue-background[:red[**Trying blue background and red text:**]] ***\\_int\\_ext\\_***")
 
 
 def main():
