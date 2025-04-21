@@ -211,8 +211,8 @@ def chat_with_llm(user_message, history=None):
 
 def chat_page():
     st.title(f"Chat with the Lab's LLM {LLM_EMOJI}")
-    st.markdown("Welcome to the chat interface!\n"
-                "Use this page to interact with our proprietary LLM.\n"
+    st.markdown("Welcome to the chat interface!  \n"
+                "Use this page to interact with our proprietary LLM.  \n"
                 "Use :keyboard: ***Enter*** to send your message and get an answer.")
 
     # Initialize chat history if it doesn't exist
