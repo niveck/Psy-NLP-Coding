@@ -20,7 +20,17 @@ HOME_EMOJI = ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
 LLM_EMOJI = ":robot_face:"
 DEBUG_EMOJI = ":hammer_and_wrench:"
-FORMATTED_CODES = {}  # TODO: add!
+CLASS_COLORS = {"int": "blue", "ext": "gray"}
+VALENCE_COLORS = {"neg": "red", "neu": "orange", "posit": "green"}
+FORMATTED_CODES = {f"_{cls}_{vln}_":
+                       f":{cls_color}-background[:{vln_color}[***\\_{cls}\\_{vln}\\_***]]"
+                   for cls, cls_color in CLASS_COLORS.items()
+                   for vln, vln_color in VALENCE_COLORS.items()}
+COLOR_CODING_LEGEND = ("**Color coding legend:** "
+                       + ", ".join([f":{cls_color}-background[{cls}]"
+                                    for cls, cls_color in CLASS_COLORS.items()]
+                                   + [f":{vln_color}[{vln}]"
+                                      for vln, vln_color in VALENCE_COLORS.items()]))
 
 
 def get_api_key():
@@ -126,6 +136,7 @@ def single_memory_page():
             st.error(e)
         else:
             st.subheader("Coded result - color coded and highlighted")
+            st.caption(COLOR_CODING_LEGEND)
             st.markdown(format_coded_result(result))
             st.subheader("Coded result - as plain text with copy button")
             st.code(result, language=None)  # using st.code to have a built-in copy button
