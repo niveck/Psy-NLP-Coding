@@ -1,4 +1,6 @@
 import os
+import time
+
 import streamlit as st
 import pandas as pd
 from pathlib import Path
@@ -20,6 +22,11 @@ DEBUG_PAGE = "debug"
 HOME_EMOJI = ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
 LLM_EMOJI = ":robot_face:"
+ENTER_KEYBOARD_EMOJI = ":leftwards_arrow_with_hook:"  # :keyboard:
+SINGLE_MEMORY_EMOJI = ":green_book:"
+MULTIPLE_MEMORIES_EMOJI = ":books:"
+MANUAL_EMOJI = ":mechanical_arm:"
+CLEAR_HISTORY_EMOJI = ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:", ":broom:", ":x:"
 DEBUG_EMOJI = ":hammer_and_wrench:"
 CLASS_COLORS = {"int": "blue", "ext": "gray"}
 VALENCE_COLORS = {"neg": "red", "neu": "orange", "posit": "green"}
@@ -32,6 +39,8 @@ COLOR_CODING_LEGEND = ("**Color coding legend:** "
                                     for cls, cls_color in CLASS_COLORS.items()]
                                    + [f":{vln_color}[{vln}]"
                                       for vln, vln_color in VALENCE_COLORS.items()]))
+
+CONTACT_SUPPORT_MESSAGE = f"For additional support you can email: niv.eckhaus@mail.huji.ac.il"
 
 
 def get_api_key():
@@ -47,6 +56,7 @@ def get_api_key():
 
 # Dummy parse_text function
 def parse_text(text, api_key=None):
+    time.sleep(2)
     # Replace this with your real implementation
     return f"Parsed result for: {text.strip()}"
 
@@ -61,6 +71,16 @@ def load_users():
 
 def get_developer_users():
     return get_list_of_lines_from_file("developer_users.txt")
+
+
+def page_bottom():
+    """
+    Create the Home button and the message about contacting support
+    """
+    if st.button(HOME_BUTTON_TEXT):
+        st.session_state.page = HOME_PAGE
+        st.rerun()
+    st.caption(CONTACT_SUPPORT_MESSAGE)
 
 
 def welcome_page():
@@ -86,6 +106,8 @@ def welcome_page():
     else:
         st.info("Enter your password to continue.")
 
+    st.caption(CONTACT_SUPPORT_MESSAGE)
+
     # api_key = st.text_input("Enter your key", type="password")
     #
     # if api_key:
@@ -98,25 +120,28 @@ def welcome_page():
     #     st.info("Enter your key to continue.")
 
 
+
+
 def home_page():
-    st.title(f"LLM-Assisted Coding - Home Page {HOME_EMOJI}")
+    st.title(f"{HOME_EMOJI} LLM-Assisted Coding &mdash; Home Page")
     columns = st.columns(4)
-    if columns[0].button("Chat with our LLM directly"):
+    if columns[0].button(f"Chat with our LLM directly {LLM_EMOJI}"):
         st.session_state.page = CHAT_PAGE
         st.rerun()
-    if columns[1].button("Code a single memory"):
+    if columns[1].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
         st.session_state.page = SINGLE_MEMORY_PAGE
         st.rerun()
-    if columns[2].button("Code multiple memories"):
+    if columns[2].button(f"Code multiple memories {MULTIPLE_MEMORIES_EMOJI}"):
         st.session_state.page = MULTIPLE_MEMORIES_PAGE
         st.rerun()
-    if columns[3].button("Manually control the coding parameters"):
+    if columns[3].button(f"Manually control parameters {MANUAL_EMOJI}"):
         st.session_state.page = MANUAL_PAGE
         st.rerun()
     if "user" in st.session_state and st.session_state.user in get_developer_users():
         if st.button(f"Debug page {DEBUG_EMOJI}"):
             st.session_state.page = DEBUG_PAGE
             st.rerun()
+    st.caption(CONTACT_SUPPORT_MESSAGE)
 
 
 def format_coded_result(result):
@@ -126,7 +151,7 @@ def format_coded_result(result):
 
 
 def single_memory_page():
-    st.title("Code a Single Memory")
+    st.title(f"{SINGLE_MEMORY_EMOJI} Code a Single Memory")
     memory_text = st.text_area("Paste the memory you want to code")
     if st.button("Code") and memory_text:  # TODO this and might be problematic
         try:
@@ -136,18 +161,16 @@ def single_memory_page():
             st.info("Connection to the model has crashed... Refresh the page.")
             st.error(e)
         else:
-            st.subheader("Coded result - color coded and highlighted")
+            st.subheader("Coded result &mdash; color coded and highlighted")
             st.caption(COLOR_CODING_LEGEND)
             st.markdown(format_coded_result(result))
-            st.subheader("Coded result - as plain text with copy button")
+            st.subheader("Coded result &mdash; as plain text with copy button")
             st.code(result, language=None)  # using st.code to have a built-in copy button
-    if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = HOME_PAGE
-        st.rerun()
+    page_bottom()
 
 
 def multiple_memories_page():
-    st.title("Code Multiple Memories")
+    st.title(f"{MULTIPLE_MEMORIES_EMOJI} Code Multiple Memories")
 
     input_mode = st.radio("Choose input method", ["Paste text", "Upload file"])
     memories = []
@@ -203,18 +226,13 @@ def multiple_memories_page():
                     st.download_button("Download TXT", txt, "results.txt", "text/plain")
                 st.dataframe(df)
 
-    if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = HOME_PAGE
-        st.rerun()
+    page_bottom()
 
 
 def manual_page():
-    st.title("Manually Control the Coding Parameters")
+    st.title(f"{MANUAL_EMOJI} Manually Control the Coding Parameters")
     st.info(":construction_worker: This page is still under construction...")
-    if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = HOME_PAGE
-        st.rerun()
-
+    page_bottom()
 
 def chat_with_llm(user_message, history=None):
     # Placeholder LLM call (replace with your real HuggingChat/LLM call)
@@ -222,10 +240,10 @@ def chat_with_llm(user_message, history=None):
 
 
 def chat_page():
-    st.title(f"Chat with the Lab's LLM {LLM_EMOJI}")
+    st.title(f"{LLM_EMOJI} Chat with the Lab's LLM")
     st.markdown("Welcome to the chat interface!  \n"
-                "Use this page to interact with our proprietary LLM.  \n"
-                "Use :keyboard: ***Enter*** to send your message and get an answer.")
+                "Use this page to interact with our proprietary LLM.")
+    st.caption(f"Use the ***Enter*** {ENTER_KEYBOARD_EMOJI} key to send your message and get an answer.")
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
@@ -264,29 +282,33 @@ def chat_page():
     # if st.button("Send"):  # TODO: trying with no button
     #     submit()
 
-    if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = "home"
-        st.session_state.chat_history = []  # Optional: clear chat on exit
-        st.rerun()
+    # if st.session_state.chat_history:
+    #     if st.button("Clear chat history ::"):
+
+    # TODO: in the following section there used to be clearing of chat_history...
+
+    # if st.button(HOME_BUTTON_TEXT):
+    #     st.session_state.page = HOME_PAGE
+    #     st.session_state.chat_history = []  # Optional: clear chat on exit
+    #     st.rerun()
+
+    page_bottom()
 
 
 # Entry point
 def debug_page():
     """
-    check: st.dialog, st.help, st.feedback, st.chat_message, st.chat_input, st.balloons, st.snow, st.warning vs st.error
+    check: st.dialog, st.help, st.feedback, st.chat_message, st.chat_input, st.warning vs st.error
     """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
     st.info("Trying the color coding with the example output...")
     result = EXAMPLE_OUTPUT_BY_FREE_MODEL
-    st.subheader("Coded result - color coded and highlighted")
+    st.subheader("Coded result &mdash; color coded and highlighted")
     st.caption(COLOR_CODING_LEGEND)
     st.markdown(format_coded_result(result))
-    st.subheader("Coded result - as plain text with copy button")
+    st.subheader("Coded result &mdash; as plain text with copy button")
     st.code(result, language=None)
-
-    if st.button(HOME_BUTTON_TEXT):
-        st.session_state.page = HOME_PAGE
-        st.rerun()
+    page_bottom()
 
 
 def main():
