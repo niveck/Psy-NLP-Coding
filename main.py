@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from io import BytesIO
 
+from holoviews.examples.gallery.apps.bokeh.crossfilter import continuous
 
 # page names
 WELCOME_PAGE = "welcome"
@@ -12,12 +13,15 @@ CHAT_PAGE = "chat"
 SINGLE_MEMORY_PAGE = "single"
 MULTIPLE_MEMORIES_PAGE = "multiple"
 MANUAL_PAGE = "manual"
+DEBUG_PAGE = "debug"
 
 # visuals
 # emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
 HOME_EMOJI = ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
 LLM_EMOJI = ":robot_face:"
+DEBUG_EMOJI = ":hammer_and_wrench:"
+FORMATTED_CODES = {}  # TODO: add!
 
 
 def get_api_key():
@@ -37,9 +41,16 @@ def parse_text(text, api_key=None):
     return f"Parsed result for: {text.strip()}"
 
 
-# Load authorized users from file
+def get_list_of_lines_from_file(file_name):
+    return Path(file_name).read_text().splitlines()  # strips whitespaces
+
+
 def load_users():
-    return Path("authorized_users.txt").read_text().splitlines()  # it strips whitespaces
+    return get_list_of_lines_from_file("authorized_users.txt")
+
+
+def get_developer_users():
+    return get_list_of_lines_from_file("developer_users.txt")
 
 
 def welcome_page():
@@ -92,15 +103,33 @@ def home_page():
     if columns[3].button("Manually control the coding parameters"):
         st.session_state.page = MANUAL_PAGE
         st.rerun()
+    if "user" in st.session_state and st.session_state.user in get_developer_users():
+        if st.button(f"Debug page {DEBUG_EMOJI}"):
+            st.session_state.page = DEBUG_PAGE
+            st.rerun()
+
+
+def format_coded_result(result):
+    for code, formatted_code in FORMATTED_CODES.items():
+        result = result.replace(code, formatted_code)
+    return result
 
 
 def single_memory_page():
     st.title("Code a Single Memory")
     memory_text = st.text_area("Paste the memory you want to code")
-    if st.button("Code"):
-        result = parse_text(memory_text)
-        st.subheader("Coded Result")
-        st.code(result, language=None)  # using st.code to have a built-in copy button
+    if st.button("Code") and memory_text:  # TODO this and might be problematic
+        try:
+            with st.spinner("Model generating your answer..."):
+                result = parse_text(memory_text)
+        except Exception as e:
+            st.info("Connection to the model has crashed... Refresh the page.")
+            st.error(e)
+        else:
+            st.subheader("Coded result - color coded and highlighted")
+            st.markdown(format_coded_result(result))
+            st.subheader("Coded result - as plain text with copy button")
+            st.code(result, language=None)  # using st.code to have a built-in copy button
     if st.button(HOME_BUTTON_TEXT):
         st.session_state.page = HOME_PAGE
         st.rerun()
@@ -231,6 +260,11 @@ def chat_page():
 
 
 # Entry point
+def debug_page():
+    st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
+    st.markdown(":blue-background[:red[**Trying blue background and red text:**]]")
+
+
 def main():
     if "page" not in st.session_state:
         st.session_state.page = WELCOME_PAGE
@@ -249,6 +283,8 @@ def main():
         multiple_memories_page()
     elif page == MANUAL_PAGE:
         manual_page()
+    elif page == DEBUG_PAGE:
+        debug_page()
 
 
 if __name__ == "__main__":
