@@ -6,7 +6,8 @@ import pandas as pd
 from pathlib import Path
 from io import BytesIO
 
-from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL
+from generating_with_together import generate, generate_for_chat
+from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL, CHAT_SYSTEM_PROMPT
 
 # page names
 WELCOME_PAGE = "welcome"
@@ -54,11 +55,12 @@ def get_api_key():
     return api_key
 
 
-# Dummy parse_text function
-def parse_text(text, api_key=None):
-    time.sleep(2)
-    # Replace this with your real implementation
-    return f"Parsed result for: {text.strip()}"
+def code_text(text, api_key=None):
+    # time.sleep(2)
+    # # Replace this with your real implementation
+    # return f"Parsed result for: {text.strip()}"
+    output, message_history = generate(text)
+    return output
 
 
 def get_list_of_lines_from_file(file_name):
@@ -155,8 +157,8 @@ def single_memory_page():
     memory_text = st.text_area("Paste the memory you want to code")
     if st.button("Code") and memory_text:  # TODO this and might be problematic
         try:
-            with st.spinner("Model generating your answer..."):
-                result = parse_text(memory_text)
+            with st.spinner("Model generating your coded result..."):
+                result = code_text(memory_text)
         except Exception as e:
             st.info("Connection to the model has crashed... Refresh the page.")
             st.error(e)
@@ -180,7 +182,6 @@ def multiple_memories_page():
         if multi_text:
             memories = [line.strip() for line in multi_text.splitlines() if line.strip()]
         input_format = "Plain text"
-
     else:  # input_mode == "Upload file":
         uploaded_file = st.file_uploader("Upload a TXT, CSV, or XLSX file",
                                          type=["txt", "csv", "xlsx"])
@@ -201,9 +202,14 @@ def multiple_memories_page():
     output_format = st.radio("Choose output format",
                              ["Same as input", "Plain text", "TXT", "CSV", "XLSX"], index=0)
 
-    if st.button("Code Memories"):
-        if memories:
-            results = [parse_text(memory) for memory in memories]
+    if st.button("Code Memories") and memories:
+        try:
+            with st.spinner("Model generating your coded results..."):
+                results = [code_text(memory) for memory in memories]
+        except Exception as e:
+            st.info("Connection to the model has crashed... Refresh the page.")
+            st.error(e)
+        else:
             if output_format == "Same as input":
                 output_format = input_format
             if output_format == "Plain text":
@@ -247,14 +253,17 @@ def chat_page():
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+        st.session_state.chat_history = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
 
     # Display chat history
     for message in st.session_state.chat_history:
+        content = message["content"].replace("_", "\\_")
         if message["role"] == "user":
-            st.markdown(f":blue-background[**You:**] {message['content']}")
-        else:
-            st.markdown(f":violet-background[**LLM:**] {message['content']}")
+            st.markdown(f":blue-background[**You:**] {content}")
+        elif message["role"] == "assistant":
+            st.markdown(f":violet-background[**LLM:**] {content}")
+        else:  # message["role"] == "system"
+            continue
 
     # User input area
     def submit():
@@ -266,10 +275,19 @@ def chat_page():
         if user_input.strip():
             # Append user message to history
             st.session_state.chat_history.append({"role": "user", "content": user_input})
+            try:
+                with st.spinner("Model generating an answer for you..."):
+                    generate_for_chat(st.session_state.chat_history)
+            except Exception as e:
+                st.info("Connection to the model has crashed...\n"
+                        "You should refresh the page, "
+                        "but maybe **first save a copy of the conversation so far**")
+                st.error(e)
 
-            # Call LLM and append its response
-            llm_response = chat_with_llm(user_input, history=st.session_state.chat_history)
-            st.session_state.chat_history.append({"role": "llm", "content": llm_response})
+            # TODO: remove this if real LLM chat works!
+            # # Call LLM and append its response
+            # llm_response = chat_with_llm(user_input, history=st.session_state.chat_history)
+            # st.session_state.chat_history.append({"role": "assistant", "content": llm_response})
 
             # # Clear input field  # TODO maybe remove?
             # st.session_state.chat_input = ""
@@ -302,12 +320,7 @@ def debug_page():
     """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
     st.info("Trying the color coding with the example output...")
-    result = EXAMPLE_OUTPUT_BY_FREE_MODEL
-    st.subheader("Coded result &mdash; color coded and highlighted")
-    st.caption(COLOR_CODING_LEGEND)
-    st.markdown(format_coded_result(result))
-    st.subheader("Coded result &mdash; as plain text with copy button")
-    st.code(result, language=None)
+
     page_bottom()
 
 
