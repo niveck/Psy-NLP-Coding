@@ -7,3 +7,4 @@ streamlit
 xlsxwriter
 openpyxl
 together
+st-gsheets-connection

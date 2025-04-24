@@ -5,8 +5,9 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 from io import BytesIO
+from streamlit_gsheets import GSheetsConnection
 
-from generating_with_together import generate, generate_for_chat
+from generating_with_together import code_text, generate_for_chat
 from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL, CHAT_SYSTEM_PROMPT
 
 # page names
@@ -53,14 +54,6 @@ def get_api_key():
         except KeyError:
             raise KeyError("An API key is required to run this app.")
     return api_key
-
-
-def code_text(text, api_key=None):
-    # time.sleep(2)
-    # # Replace this with your real implementation
-    # return f"Parsed result for: {text.strip()}"
-    output, message_history = generate(text)
-    return output
 
 
 def get_list_of_lines_from_file(file_name):
@@ -152,15 +145,29 @@ def format_coded_result(result):
     return result
 
 
+def save_generation_log(single_generation_log: dict[str] = None,
+                        multiple_generation_logs: list[dict[str]] = None, ):
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    df = conn.read(ttl=0)
+    if single_generation_log:
+        df.loc[len(df)] = single_generation_log
+    if multiple_generation_logs:
+        df = pd.concat([df, pd.DataFrame(multiple_generation_logs)], ignore_index=True)
+    conn.update(data=df)
+
+
 def single_memory_page():
     st.title(f"{SINGLE_MEMORY_EMOJI} Code a Single Memory")
     memory_text = st.text_area("Paste the memory you want to code")
     if st.button("Code") and memory_text:  # TODO this and might be problematic
         try:
             with st.spinner("Model generating your coded result..."):
-                result = code_text(memory_text)
+                result, message_history, generation_log = code_text(memory_text)
+                save_generation_log(single_generation_log=generation_log)
         except Exception as e:
-            st.info("Connection to the model has crashed... Refresh the page.")
+            st.info("Connection to the model has crashed...")
+            st.warning("You can send us the following error message: "
+                       "**(and then refresh the page)**")
             st.error(e)
         else:
             st.subheader("Coded result &mdash; color coded and highlighted")
@@ -205,7 +212,12 @@ def multiple_memories_page():
     if st.button("Code Memories") and memories:
         try:
             with st.spinner("Model generating your coded results..."):
-                results = [code_text(memory) for memory in memories]
+                results, logs = [], []
+                for memory in memories:
+                    result, message_history, generation_log = code_text(memory)
+                    results.append(result)
+                    logs.append(generation_log)
+                save_generation_log(multiple_generation_logs=logs)
         except Exception as e:
             st.info("Connection to the model has crashed... Refresh the page.")
             st.error(e)
@@ -322,6 +334,44 @@ def debug_page():
     st.info("Trying the color coding with the example output...")
     st.caption(COLOR_CODING_LEGEND)
     st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL))
+
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    st.code(dir(conn))
+    old_df = conn.read(ttl=0)
+    st.caption("This is the old DF before adding a row: (after third)")
+    # print("This is the old DF before adding a row: (after third)")
+    st.write(old_df)
+    # print(old_df)
+    # new_row = [1, "n", "free", "first input", "YAY!"]
+    new_row = [2, "n", "free", "second input", "PRAYYYY"]
+    # new_row = [3, "n", "free", "third input", "PLEASE READ IT!"]
+    # new_row = [4, "n", "free", "forth input", "4444"]
+    # new_df = pd.DataFrame([new_row], columns=["timestamp", "user", "model", "input", "output"])
+    # conn.update(data=new_df)
+    old_df.loc[len(old_df)] = new_row
+    conn.update(data=old_df)
+    conn.reset()
+    # st.code(help(conn.update))
+    # st.code(help(conn.read))
+    # help(conn.reset)
+
+
+    # # TODO: this is claude's suggestion:
+    # conn = st.connection("gsheets", type=GSheetsConnection)
+    # old_df = conn.read(ttl=0)
+    # st.caption("This is the DF after changing to wait_timestamp")
+    # st.write(old_df)
+    #
+    # # # Create new row
+    # # new_row = [3, "n", "free", "third input", "PLEASE READ IT!"]
+    # # new_df = pd.DataFrame([new_row], columns=["timestamp", "user", "model", "input", "output"])
+    # #
+    # # # Append the new row to the existing data
+    # # combined_df = pd.concat([old_df, new_df], ignore_index=True)
+    # #
+    # # # Update with the combined data
+    # # conn.update(data=combined_df)
+    # conn.reset()
 
     page_bottom()
 
