@@ -7,7 +7,7 @@ from pathlib import Path
 from io import BytesIO
 from streamlit_gsheets import GSheetsConnection
 
-from generating_with_together import code_text, generate_for_chat
+from generating_with_together import code_text, generate_for_chat, save_generation_log
 from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL, CHAT_SYSTEM_PROMPT
 
 # page names
@@ -145,17 +145,6 @@ def format_coded_result(result):
     return result
 
 
-def save_generation_log(single_generation_log: dict[str] = None,
-                        multiple_generation_logs: list[dict[str]] = None, ):
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(ttl=0)
-    if single_generation_log:
-        df.loc[len(df)] = single_generation_log
-    if multiple_generation_logs:
-        df = pd.concat([df, pd.DataFrame(multiple_generation_logs)], ignore_index=True)
-    conn.update(data=df)
-
-
 def single_memory_page():
     st.title(f"{SINGLE_MEMORY_EMOJI} Code a Single Memory")
     memory_text = st.text_area("Paste the memory you want to code")
@@ -165,10 +154,7 @@ def single_memory_page():
                 result, message_history, generation_log = code_text(memory_text)
                 save_generation_log(single_generation_log=generation_log)
         except Exception as e:
-            st.info("Connection to the model has crashed...")
-            st.warning("You can send us the following error message: "
-                       "**(and then refresh the page)**")
-            st.error(e)
+            handle_generation_error(e)
         else:
             st.subheader("Coded result &mdash; color coded and highlighted")
             st.caption(COLOR_CODING_LEGEND)
@@ -176,6 +162,13 @@ def single_memory_page():
             st.subheader("Coded result &mdash; as plain text with copy button")
             st.code(result, language=None)  # using st.code to have a built-in copy button
     page_bottom()
+
+
+def handle_generation_error(error):
+    st.info("Connection to the model has crashed...")
+    st.warning("You can send us the following error message: "
+               "**(and then refresh the page)**")
+    st.error(error)
 
 
 def multiple_memories_page():
@@ -219,8 +212,7 @@ def multiple_memories_page():
                     logs.append(generation_log)
                 save_generation_log(multiple_generation_logs=logs)
         except Exception as e:
-            st.info("Connection to the model has crashed... Refresh the page.")
-            st.error(e)
+            handle_generation_error(e)
         else:
             if output_format == "Same as input":
                 output_format = input_format
