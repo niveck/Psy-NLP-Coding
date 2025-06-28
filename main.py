@@ -19,6 +19,8 @@ MULTIPLE_MEMORIES_PAGE = "multiple"
 MANUAL_PAGE = "manual"
 DEBUG_PAGE = "debug"
 
+CONTACT_SUPPORT_MESSAGE = f"For additional support you can email: niv.eckhaus@mail.huji.ac.il"
+
 # visuals
 # emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
 HOME_EMOJI = ":house:"
@@ -30,19 +32,60 @@ MULTIPLE_MEMORIES_EMOJI = ":books:"
 MANUAL_EMOJI = ":mechanical_arm:"
 CLEAR_HISTORY_EMOJI = ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:", ":broom:", ":x:"
 DEBUG_EMOJI = ":hammer_and_wrench:"
-CLASS_COLORS = {"int": "blue", "ext": "gray"}
-VALENCE_COLORS = {"neg": "red", "neu": "orange", "posit": "green"}
-FORMATTED_CODES = {f"_{cls}_{vln}_":
-                       f":{cls_color}-background[:{vln_color}[***\\_{cls}\\_{vln}\\_***]]"
-                   for cls, cls_color in CLASS_COLORS.items()
-                   for vln, vln_color in VALENCE_COLORS.items()}
-COLOR_CODING_LEGEND = ("**Color coding legend:** "
-                       + ", ".join([f":{cls_color}-background[{cls}]"
-                                    for cls, cls_color in CLASS_COLORS.items()]
-                                   + [f":{vln_color}[{vln}]"
-                                      for vln, vln_color in VALENCE_COLORS.items()]))
+SAVE_EMOJI = ":floppy_disk:"
+SAVE_CHANGES_BUTTON_TEXT = f"{SAVE_EMOJI} Save Changes"
 
-CONTACT_SUPPORT_MESSAGE = f"For additional support you can email: niv.eckhaus@mail.huji.ac.il"
+GENERAL_COLOR_CODING_LEGEND_TITLE = "**Color coding legend:**"
+
+# coding tasks
+SEGMENT_LOCUS_VALENCE = "Segment-Locus-Valence"
+SEGMENT_COHERENCE = "Segment-Coherence"
+ALL_CODING_TASKS = [SEGMENT_LOCUS_VALENCE, SEGMENT_COHERENCE]
+DEFAULT_CODING_TASK = ALL_CODING_TASKS[0]
+# parameters defining each task (their values should be defined for each task)
+TASK_DEFINITION = "task_definition"
+INPUT_FORMAT_INSTRUCTION = "input_format_instruction"
+OUTPUT_FORMAT_INSTRUCTION = "output_format_instruction"
+CORRECT_EXAMPLES_PATH = "correct_examples_path"
+INCORRECT_EXAMPLES_PATH = "incorrect_examples_path"
+FORMATTED_CODES_DICT = "formatted_codes_dict"
+COLOR_CODING_LEGEND = "color_coding_legend"
+ALL_CODING_TASK_PARAMETERS = [TASK_DEFINITION, INPUT_FORMAT_INSTRUCTION, OUTPUT_FORMAT_INSTRUCTION,
+                              CORRECT_EXAMPLES_PATH, INCORRECT_EXAMPLES_PATH, FORMATTED_CODES_DICT,
+                              COLOR_CODING_LEGEND]
+
+# Segment-Locus-Valence (`slv`) coding
+SLV_CLASS_COLORS = {"int": "blue", "ext": "gray"}
+SLV_VALENCE_COLORS = {"neg": "red", "neu": "orange", "posit": "green"}
+SLV_FORMATTED_CODES = {f"_{cls}_{vln}_":
+                       f":{cls_color}-background[:{vln_color}[***\\_{cls}\\_{vln}\\_***]]"
+                       for cls, cls_color in SLV_CLASS_COLORS.items()
+                       for vln, vln_color in SLV_VALENCE_COLORS.items()}
+SLV_COLOR_CODING_LEGEND = (", ".join([f":{cls_color}-background[{cls}]"
+                                      for cls, cls_color in SLV_CLASS_COLORS.items()]
+                                     + [f":{vln_color}[{vln}]"
+                                        for vln, vln_color in SLV_VALENCE_COLORS.items()]))
+
+# Segment-Coherence (`coh`) coding
+COH_LEVELS_AND_COLORS = {"low": "red", "mid": "orange", "high": "green"}
+COH_FORMATTED_CODES = {f"_{lvl}_": f":gray-background[:{lvl_color}[***\\_{lvl}\\_***]]"
+                       for lvl, lvl_color in COH_LEVELS_AND_COLORS.items()}
+COH_COLOR_CODING_LEGEND = ", ".join([f":{lvl_color}[{lvl}]"
+                                     for lvl, lvl_color in COH_LEVELS_AND_COLORS.items()])
+
+
+# model config
+FREE_SERVICE = "TogetherAI"
+PRIVATE_SERVICE = "HuggingFaceHub"
+MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
+MODEL_SERVICES_AVAILABLE_LLMS = {FREE_SERVICE: ["meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"],
+                                 PRIVATE_SERVICE: ["", ""]}
+MODEL_SERVICE, BASE_LLM, CODING_TASK = "model_service", "base_llm", "coding_task"
+MODEL_CONFIG_KEYS = [MODEL_SERVICE, BASE_LLM, CODING_TASK]
+DEFAULT_MODEL_CONFIG = {MODEL_SERVICE: FREE_SERVICE,
+                        BASE_LLM: MODEL_SERVICES_AVAILABLE_LLMS[FREE_SERVICE][0],
+                        CODING_TASK: DEFAULT_CODING_TASK}
+
 
 
 def get_api_key():
@@ -129,7 +172,7 @@ def home_page():
     if columns[2].button(f"Chat with our LLM directly {LLM_EMOJI}"):
         st.session_state.page = CHAT_PAGE
         st.rerun()
-    if columns[3].button(f"Manually control parameters {MANUAL_EMOJI}"):
+    if columns[3].button(f"Manually control configuration {MANUAL_EMOJI}"):
         st.session_state.page = MANUAL_PAGE
         st.rerun()
     if "user" in st.session_state and st.session_state.user in get_developer_users():
@@ -140,13 +183,14 @@ def home_page():
 
 
 def format_coded_result(result):
-    for code, formatted_code in FORMATTED_CODES.items():
+    for code, formatted_code in SLV_FORMATTED_CODES.items():
         result = result.replace(code, formatted_code)
     return result
 
 
 def single_memory_page():
     st.title(f"{SINGLE_MEMORY_EMOJI} Code a Single Memory")
+    show_current_config_info()
     memory_text = st.text_area("Paste the memory you want to code")
     if st.button("Code") and memory_text:  # TODO this and might be problematic
         try:
@@ -157,7 +201,7 @@ def single_memory_page():
             handle_generation_error(e)
         else:
             st.subheader("Coded result &mdash; color coded and highlighted")
-            st.caption(COLOR_CODING_LEGEND)
+            st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {SLV_COLOR_CODING_LEGEND}")
             st.markdown(format_coded_result(result))
             st.subheader("Coded result &mdash; as plain text with copy button")
             st.code(result, language=None)  # using st.code to have a built-in copy button
@@ -173,6 +217,7 @@ def handle_generation_error(error):
 
 def multiple_memories_page():
     st.title(f"{MULTIPLE_MEMORIES_EMOJI} Code Multiple Memories")
+    show_current_config_info()
 
     input_mode = st.radio("Choose input method", ["Paste text", "Upload file"])
     memories = []
@@ -240,24 +285,58 @@ def multiple_memories_page():
 
 
 def manual_page():
-    st.title(f"{MANUAL_EMOJI} Manually Control the Coding Parameters")
-    st.info(":construction_worker: This page is still under construction...")
+    st.title(f"{MANUAL_EMOJI} Manually Control the Coding Model's Configuration")
+    st.info(get_current_model_config_message())
+    model_service, base_llm, coding_task = None, None, None
+    explainable_model_types = {f"{desc.capitalize()}": service
+                               for service, desc in MODEL_SERVICES_DESCRIPTION.items()}
+    model_service_desc = st.selectbox("Choose kind of model", list(explainable_model_types.keys()))
+    if model_service_desc:
+        model_service = explainable_model_types[model_service_desc]
+    base_llm_option_key = model_service if model_service is not None else st.session_state.model_config[MODEL_SERVICE]
+    base_llm = st.selectbox("Choose base-LLM", MODEL_SERVICES_AVAILABLE_LLMS[base_llm_option_key])
+    coding_task = st.selectbox("Choose coding task", ALL_CODING_TASKS)
+
+    if st.button(SAVE_CHANGES_BUTTON_TEXT):
+        for key, new_value in [(MODEL_SERVICE, model_service), (BASE_LLM, base_llm),
+                               (CODING_TASK, coding_task)]:
+            if new_value is not None:
+                st.session_state.model_config[key] = new_value
+        st.rerun()
+
+    # st.info(":construction_worker: This page is still under construction...")
+
     page_bottom()
 
-def chat_with_llm(user_message, history=None):
+def chat_with_llm(user_message, history=None):  # TODO remove
     # Placeholder LLM call (replace with your real HuggingChat/LLM call)
     return f"You said '{user_message}', and I’m responding intelligently."
+
+
+def get_current_model_config_message():
+    model_config = validate_model_config()
+    model_service_description = MODEL_SERVICES_DESCRIPTION[model_config[MODEL_SERVICE]]
+    return (f"You are currently working with the following **model configuration**:\n"
+            f"- The **{model_service_description.upper()}** model\n"
+            f"- Trained on the base-LLM: **{model_config[BASE_LLM]}**\n"
+            f"- For the coding task: **{model_config[CODING_TASK]}**\n")
+
+def show_current_config_info():
+    config_ifo_message = get_current_model_config_message()
+    st.info(f"{config_ifo_message}\n"
+            f"***You can modify this configuration at the manual control page*** {MANUAL_EMOJI}")
 
 
 def chat_page():
     st.title(f"{LLM_EMOJI} Chat with the Lab's LLM")
     st.markdown("Welcome to the chat interface!  \n"
                 "Use this page to interact with our proprietary LLM.")
+    show_current_config_info()
     st.caption(f"Use the ***Enter*** {ENTER_KEYBOARD_EMOJI} key to send your message and get an answer.")
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+        st.session_state.chat_history = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]  # TODO: change to a function that creates the system prompt based on the current coding task
 
     # Display chat history
     for message in st.session_state.chat_history:
@@ -323,8 +402,9 @@ def debug_page():
     check: st.dialog, st.help, st.feedback, st.chat_message, st.chat_input, st.warning vs st.error
     """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
+    show_current_config_info()
     st.info("Trying the color coding with the example output...")
-    st.caption(COLOR_CODING_LEGEND)
+    st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {SLV_COLOR_CODING_LEGEND}")
     st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL))
 
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -368,9 +448,17 @@ def debug_page():
     page_bottom()
 
 
+def validate_model_config():
+    if "model_config" not in st.session_state:
+        st.session_state.model_config = {key: value for key, value in DEFAULT_MODEL_CONFIG.items()}
+    return st.session_state.model_config
+
+
 def main():
     if "page" not in st.session_state:
         st.session_state.page = WELCOME_PAGE
+
+    validate_model_config()
 
     page = st.session_state.page
 
