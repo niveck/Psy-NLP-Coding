@@ -137,6 +137,30 @@ GENERATION_LOG_COLUMNS = [TIMESTAMP_COLUMN, USERNAME_COLUMN, SERVICE_COLUMN, BAS
 DIRECT_CODING_TASK = "direct_coding"
 CHAT_TASK = "chat"
 
+# prompts
+SYSTEM_INTRO = "You are a useful assistant for a clinical psychology research, used to code memory segments of patients by a coding scheme, so they can be used for research."
+# notice it uses format-string for input_format and output_format!
+CHAT_INSTRUCTION_FORMAT = """INSTRUCTION:
+You are used as a chat assistant. Your role is to provide guidance, answer questions, and assist through natural dialogue in a multi-turn conversation format.
+Below are the ORIGINAL task format specifications (for reference only - these describe the task the researchers are working on, NOT how you should respond):
+--- REFERENCE MATERIALS (DO NOT FOLLOW THESE FORMATS IN YOUR RESPONSES) ---
+ORIGINAL INPUT FORMAT:
+```
+{0}
+```
+ORIGINAL OUTPUT FORMAT:
+```
+{1}
+```
+--- END REFERENCE MATERIALS ---
+YOUR ACTUAL ROLE:
+- Respond as a helpful chat assistant using natural conversation
+- Answer questions about the coding task described above
+- Provide guidance and support for the researchers
+- Use normal chat responses unless explicitly asked to demonstrate the original formats
+- Do NOT automatically format your responses according to the input/output specifications above
+Always maintain a helpful, conversational tone while assisting with this coding task."""
+
 
 def validate_model_config():
     if "model_config" not in st.session_state:

@@ -1,14 +1,54 @@
-# TODO: after commit, move all of this code to prompts.py and rename to prompting.py
-
+# TODO: rename to prompting.py
 import time
 import pandas as pd
 from together import Together
 from huggingface_hub import InferenceClient
 from streamlit_gsheets import GSheetsConnection
-
 from constants import *
-from prompts import get_system_prompt
 
+
+def parse_example_for_system_prompt(example):
+    if type(example) is str:
+        return "\n" + example
+    parsed = ""
+    if INPUT in example:
+        parsed += f"\n{INPUT}: {example[INPUT]}"
+    if OUTPUT in example:
+        parsed += f"\n{OUTPUT}: {example[OUTPUT]}"
+    if EXPLANATION in example:
+        parsed += f"\n{EXPLANATION}: {example[EXPLANATION]}"
+    return parsed
+
+
+def get_private_examples(sheet):
+    if not sheet:
+        return []
+    return []  # TODO: needs implementation!
+
+
+def get_system_prompt(prompt_type_task=DIRECT_CODING_TASK):
+    coding_task = validate_model_config()[CODING_TASK]
+    parameters = PARAMETERS_BY_CODING_TASK[coding_task]
+    task_instruction = parameters[TASK_DEFINITION]
+    input_format, output_format = parameters[INPUT_FORMAT_INSTRUCTION], parameters[OUTPUT_FORMAT_INSTRUCTION]
+    system_prompt = f"{SYSTEM_INTRO}\n\nCODING SCHEME:\n{task_instruction}"
+    if prompt_type_task == CHAT_TASK:
+        system_prompt += f"\n\n{CHAT_INSTRUCTION_FORMAT.format(input_format, output_format)}"
+    else:  # prompt_type_task == DIRECT_CODING_TASK
+        system_prompt += f"\n\nINPUT FORMAT:\n{input_format}\n\nOUTPUT FORMAT:\n{output_format}"
+    public_correct_examples, public_incorrect_examples = parameters[PUBLIC_CORRECT_EXAMPLES], parameters[PUBLIC_INCORRECT_EXAMPLES]
+    private_correct_examples = get_private_examples(parameters[PRIVATE_CORRECT_EXAMPLES_SHEET])
+    private_incorrect_examples = get_private_examples(parameters[PRIVATE_INCORRECT_EXAMPLES_SHEET])
+    for examples, title in [(public_correct_examples + private_correct_examples, "EXAMPLES FOR CORRECT CODINGS"),
+                            (public_incorrect_examples + private_incorrect_examples, "EXAMPLES FOR INCORRECT CODINGS")]:
+        if examples:
+            system_prompt += f"\n\n{title}:"
+            for example in public_correct_examples:
+                system_prompt += parse_example_for_system_prompt(example)
+    return system_prompt
+
+
+# TODO: add a check in st.state so they can be defined only once!
 together_client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
 hf_client = InferenceClient(provider="hf-inference", api_key=st.secrets["HF_API_KEY"])
 
@@ -77,17 +117,3 @@ def generate_for_chat(messages: list[dict[str, str]], temperature: float = 0):
     log = get_generation_log(service, base_llm, coding_task, messages, generation_kwargs, output, CHAT_TASK)
     messages.append({"role": "assistant", "content": output})  # first add to show user  # TODO: maybe st.rerun()?
     save_generation_log(single_generation_log=log)  # then save log
-
-
-def debug_main():
-    EXAMPLE_INPUT = """I had an essay due the same day as my presentation so I thought I could do the presentation without preparing so I just did all my slides and for some reason I didn't save it that night so I had to do it and the class was in the afternoon so I did it in the morning and then cause I had class in the morning so I did it in a real rush kind of way so it was pretty screwed up. By the time I got to the class for some reason I was the first one up. I couldn't have any time to prepare for it so I just went up and talked about my presentation. It was about some Catholic like thing. That's all I remember. Cause they were in Catholic - I'm not really religious or anything like that so I don't know some of the terms or some of the stuff so by the time I finished my presentation I was like, everything was kind of screwed up cause I knew I didn't get the terms right. There were some religious stuff that I messed up and then it was like a final presentation so I knew it would cost a lot of marks in my final grade. By the time I finished it the teacher was shaking his head a bit like that and then ya so I sat down and ya I was pretty angry at myself. That was about it."""
-    answer, message_history, log = code_text(EXAMPLE_INPUT)
-    print("Answer:")
-    print(answer)
-    print("Message history:")
-    print(message_history)
-
-
-if __name__ == "__main__":
-    print("stop")
-    debug_main()

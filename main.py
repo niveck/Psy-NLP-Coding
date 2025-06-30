@@ -1,15 +1,11 @@
-import os
-import time
-
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 from io import BytesIO
 from streamlit_gsheets import GSheetsConnection
 
-from generating_with_together import code_text, generate_for_chat, save_generation_log
-from prompts import get_system_prompt
-from constants import *
+from prompting import get_system_prompt, code_text, generate_for_chat, save_generation_log
+from constants import *  # includes st
 
 
 def get_list_of_lines_from_file(file_name):
@@ -297,9 +293,7 @@ def debug_page():
     st.code(dir(conn))
     old_df = conn.read(ttl=0)
     st.caption("This is the old DF before adding a row: (after third)")
-    # print("This is the old DF before adding a row: (after third)")
     st.write(old_df)
-    # # print(old_df)
     # update_df = False
     # if update_df:
     #     new_row = [1, "n", FREE_SERVICE, "free", SEGMENT_LOCUS_VALENCE, "input", "{}", "output", "coding"]
@@ -307,27 +301,6 @@ def debug_page():
     #     # conn.update(data=new_df)
     #     old_df.loc[len(old_df)] = new_row
     # conn.update(data=old_df)
-    # conn.reset()
-    # # st.code(help(conn.update))
-    # # st.code(help(conn.read))
-    # # help(conn.reset)
-
-
-    # # TODO: this is claude's suggestion:
-    # conn = st.connection("gsheets", type=GSheetsConnection)
-    # old_df = conn.read(ttl=0)
-    # st.caption("This is the DF after changing to wait_timestamp")
-    # st.write(old_df)
-    #
-    # # # Create new row
-    # # new_row = [3, "n", "free", "third input", "PLEASE READ IT!"]
-    # # new_df = pd.DataFrame([new_row], columns=["timestamp", "user", "model", "input", "output"])
-    # #
-    # # # Append the new row to the existing data
-    # # combined_df = pd.concat([old_df, new_df], ignore_index=True)
-    # #
-    # # # Update with the combined data
-    # # conn.update(data=combined_df)
     # conn.reset()
 
     page_bottom()
