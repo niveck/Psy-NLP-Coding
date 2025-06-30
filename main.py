@@ -60,18 +60,22 @@ def welcome_page():
 
 def home_page():
     st.title(f"{HOME_EMOJI} LLM-Assisted Coding &mdash; Home Page &mdash; BETA")
-    columns = st.columns(4)  # TODO: maybe add a button for visual presentation of coded text!
-    if columns[0].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
+    first_row = st.columns(5)
+    second_row = st.columns(4)
+    if first_row[1].button(f"Highlight Codes {PALETTE_EMOJI}"):
+        st.session_state.page = HIGHLIGHT_PAGE
+        st.rerun()
+    if first_row[2].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
         st.session_state.page = SINGLE_MEMORY_PAGE
         st.rerun()
-    if columns[1].button(f"Code multiple memories {MULTIPLE_MEMORIES_EMOJI}"):
+    if first_row[3].button(f"Code multiple memories {MULTIPLE_MEMORIES_EMOJI}"):
         st.session_state.page = MULTIPLE_MEMORIES_PAGE
         st.rerun()
-    if columns[2].button(f"Chat with our LLM directly {LLM_EMOJI}"):
-        st.session_state.page = CHAT_PAGE
-        st.rerun()
-    if columns[3].button(f"Manually control configuration {MANUAL_EMOJI}"):
+    if second_row[1].button(f"Manually control configuration {MANUAL_EMOJI}"):
         st.session_state.page = MANUAL_PAGE
+        st.rerun()
+    if second_row[2].button(f"Chat with our LLM directly {LLM_EMOJI}"):
+        st.session_state.page = CHAT_PAGE
         st.rerun()
     if "user" in st.session_state and st.session_state.user in get_developer_users():
         if st.button(f"Debug page {DEBUG_EMOJI}"):
@@ -210,8 +214,6 @@ def manual_page():
                 st.session_state.model_config[key] = new_value
         st.rerun()
 
-    # st.info(":construction_worker: This page is still under construction...")
-
     page_bottom()
 
 
@@ -223,10 +225,10 @@ def get_current_model_config_message():
             f"- Based on the LLM: **{model_config[BASE_LLM]}**\n"
             f"- Trained for the coding task: **{model_config[CODING_TASK]}**\n")
 
+
 def show_current_config_info():
     config_ifo_message = get_current_model_config_message()
-    st.info(f"{config_ifo_message}\n"
-            f"***You can modify this configuration at the manual control page*** {MANUAL_EMOJI}")
+    st.info(f"{config_ifo_message}\n{MODIFY_CONFIG_INSTRUCTION}")
 
 
 def chat_page():
@@ -308,6 +310,19 @@ def debug_page():
     page_bottom()
 
 
+def highlight_page():
+    st.title(f"{PALETTE_EMOJI} Highlight Codes in text")
+    model_config = validate_model_config()
+    st.info(f"You are currently working with the coding task: **{model_config[CODING_TASK]}**"
+            f"\n\n{MODIFY_CONFIG_INSTRUCTION}")
+    formatted_codes, color_coding_legend = get_coding_task_formatted_codes()
+    st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {color_coding_legend}")
+    text = st.text_area("Paste the memory you want to code")
+    if st.button("Highlight") and text:
+        st.markdown(format_coded_result(text, formatted_codes))
+    page_bottom()
+
+
 def main():
     if "page" not in st.session_state:
         st.session_state.page = WELCOME_PAGE
@@ -330,6 +345,8 @@ def main():
         manual_page()
     elif page == DEBUG_PAGE:
         debug_page()
+    elif page == HIGHLIGHT_PAGE:
+        highlight_page()
 
 
 if __name__ == "__main__":

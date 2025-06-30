@@ -9,8 +9,7 @@ SINGLE_MEMORY_PAGE = "single"
 MULTIPLE_MEMORIES_PAGE = "multiple"
 MANUAL_PAGE = "manual"
 DEBUG_PAGE = "debug"
-
-CONTACT_SUPPORT_MESSAGE = f"For additional support you can email: niv.eckhaus@mail.huji.ac.il"
+HIGHLIGHT_PAGE = "highlight"
 
 # visuals
 # emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
@@ -25,8 +24,11 @@ CLEAR_HISTORY_EMOJI = ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:
 DEBUG_EMOJI = ":hammer_and_wrench:"
 SAVE_EMOJI = ":floppy_disk:"
 SAVE_CHANGES_BUTTON_TEXT = f"{SAVE_EMOJI} Save Changes"
+PALETTE_EMOJI = ":art:"
 
 GENERAL_COLOR_CODING_LEGEND_TITLE = "**Color coding legend:**"
+CONTACT_SUPPORT_MESSAGE = "For additional support you can email: niv.eckhaus@mail.huji.ac.il"
+MODIFY_CONFIG_INSTRUCTION = f"***You can modify this configuration at the manual control page*** {MANUAL_EMOJI}"
 
 # coding tasks
 SEGMENT_LOCUS_VALENCE = "Segment-Locus-Valence"
@@ -114,7 +116,11 @@ FREE_SERVICE = "TogetherAI"
 PRIVATE_SERVICE = "HuggingFaceHub"
 MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
 MODEL_SERVICES_AVAILABLE_LLMS = {FREE_SERVICE: ["meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"],
-                                 PRIVATE_SERVICE: ["", ""]}
+                                 PRIVATE_SERVICE: [
+                                     "meta-llama/Llama-3.3-70B-Instruct",
+                                     # "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",  # uses </think>
+                                     "microsoft/phi-4"
+                                 ]}
 MODEL_SERVICE, BASE_LLM, CODING_TASK = "model_service", "base_llm", "coding_task"
 MODEL_CONFIG_KEYS = [MODEL_SERVICE, BASE_LLM, CODING_TASK]
 DEFAULT_MODEL_CONFIG = {MODEL_SERVICE: FREE_SERVICE,
