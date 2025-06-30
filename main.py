@@ -8,95 +8,8 @@ from io import BytesIO
 from streamlit_gsheets import GSheetsConnection
 
 from generating_with_together import code_text, generate_for_chat, save_generation_log
-from prompts import EXAMPLE_OUTPUT_BY_FREE_MODEL, CHAT_SYSTEM_PROMPT
-
-# page names
-WELCOME_PAGE = "welcome"
-HOME_PAGE = "home"
-CHAT_PAGE = "chat"
-SINGLE_MEMORY_PAGE = "single"
-MULTIPLE_MEMORIES_PAGE = "multiple"
-MANUAL_PAGE = "manual"
-DEBUG_PAGE = "debug"
-
-CONTACT_SUPPORT_MESSAGE = f"For additional support you can email: niv.eckhaus@mail.huji.ac.il"
-
-# visuals
-# emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
-HOME_EMOJI = ":house:"
-HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
-LLM_EMOJI = ":robot_face:"
-ENTER_KEYBOARD_EMOJI = ":leftwards_arrow_with_hook:"  # :keyboard:
-SINGLE_MEMORY_EMOJI = ":green_book:"
-MULTIPLE_MEMORIES_EMOJI = ":books:"
-MANUAL_EMOJI = ":mechanical_arm:"
-CLEAR_HISTORY_EMOJI = ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:", ":broom:", ":x:"
-DEBUG_EMOJI = ":hammer_and_wrench:"
-SAVE_EMOJI = ":floppy_disk:"
-SAVE_CHANGES_BUTTON_TEXT = f"{SAVE_EMOJI} Save Changes"
-
-GENERAL_COLOR_CODING_LEGEND_TITLE = "**Color coding legend:**"
-
-# coding tasks
-SEGMENT_LOCUS_VALENCE = "Segment-Locus-Valence"
-SEGMENT_COHERENCE = "Segment-Coherence"
-ALL_CODING_TASKS = [SEGMENT_LOCUS_VALENCE, SEGMENT_COHERENCE]
-DEFAULT_CODING_TASK = ALL_CODING_TASKS[0]
-# parameters defining each task (their values should be defined for each task)
-TASK_DEFINITION = "task_definition"
-INPUT_FORMAT_INSTRUCTION = "input_format_instruction"
-OUTPUT_FORMAT_INSTRUCTION = "output_format_instruction"
-CORRECT_EXAMPLES_PATH = "correct_examples_path"
-INCORRECT_EXAMPLES_PATH = "incorrect_examples_path"
-FORMATTED_CODES_DICT = "formatted_codes_dict"
-COLOR_CODING_LEGEND = "color_coding_legend"
-ALL_CODING_TASK_PARAMETERS = [TASK_DEFINITION, INPUT_FORMAT_INSTRUCTION, OUTPUT_FORMAT_INSTRUCTION,
-                              CORRECT_EXAMPLES_PATH, INCORRECT_EXAMPLES_PATH, FORMATTED_CODES_DICT,
-                              COLOR_CODING_LEGEND]
-
-# Segment-Locus-Valence (`slv`) coding
-SLV_CLASS_COLORS = {"int": "blue", "ext": "gray"}
-SLV_VALENCE_COLORS = {"neg": "red", "neu": "orange", "posit": "green"}
-SLV_FORMATTED_CODES = {f"_{cls}_{vln}_":
-                       f":{cls_color}-background[:{vln_color}[***\\_{cls}\\_{vln}\\_***]]"
-                       for cls, cls_color in SLV_CLASS_COLORS.items()
-                       for vln, vln_color in SLV_VALENCE_COLORS.items()}
-SLV_COLOR_CODING_LEGEND = (", ".join([f":{cls_color}-background[{cls}]"
-                                      for cls, cls_color in SLV_CLASS_COLORS.items()]
-                                     + [f":{vln_color}[{vln}]"
-                                        for vln, vln_color in SLV_VALENCE_COLORS.items()]))
-
-# Segment-Coherence (`coh`) coding
-COH_LEVELS_AND_COLORS = {"low": "red", "mid": "orange", "high": "green"}
-COH_FORMATTED_CODES = {f"_{lvl}_": f":gray-background[:{lvl_color}[***\\_{lvl}\\_***]]"
-                       for lvl, lvl_color in COH_LEVELS_AND_COLORS.items()}
-COH_COLOR_CODING_LEGEND = ", ".join([f":{lvl_color}[{lvl}]"
-                                     for lvl, lvl_color in COH_LEVELS_AND_COLORS.items()])
-
-
-# model config
-FREE_SERVICE = "TogetherAI"
-PRIVATE_SERVICE = "HuggingFaceHub"
-MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
-MODEL_SERVICES_AVAILABLE_LLMS = {FREE_SERVICE: ["meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"],
-                                 PRIVATE_SERVICE: ["", ""]}
-MODEL_SERVICE, BASE_LLM, CODING_TASK = "model_service", "base_llm", "coding_task"
-MODEL_CONFIG_KEYS = [MODEL_SERVICE, BASE_LLM, CODING_TASK]
-DEFAULT_MODEL_CONFIG = {MODEL_SERVICE: FREE_SERVICE,
-                        BASE_LLM: MODEL_SERVICES_AVAILABLE_LLMS[FREE_SERVICE][0],
-                        CODING_TASK: DEFAULT_CODING_TASK}
-
-
-
-def get_api_key():
-    try:
-        api_key = st.secrets["TOGETHER_API_KEY"]
-    except KeyError:
-        try:
-            api_key = os.environ["TOGETHER_API_KEY"]
-        except KeyError:
-            raise KeyError("An API key is required to run this app.")
-    return api_key
+from prompts import get_system_prompt
+from constants import *
 
 
 def get_list_of_lines_from_file(file_name):
@@ -146,23 +59,10 @@ def welcome_page():
 
     st.caption(CONTACT_SUPPORT_MESSAGE)
 
-    # api_key = st.text_input("Enter your key", type="password")
-    #
-    # if api_key:
-    #     if st.button("Continue"):
-    #         st.session_state.user = selected_user
-    #         st.session_state.api_key = api_key
-    #         st.session_state.page = HOME_PAGE
-    #         st.rerun()
-    # else:
-    #     st.info("Enter your key to continue.")
-
-
-
 
 def home_page():
     st.title(f"{HOME_EMOJI} LLM-Assisted Coding &mdash; Home Page &mdash; BETA")
-    columns = st.columns(4)
+    columns = st.columns(4)  # TODO: maybe add a button for visual presentation of coded text!
     if columns[0].button(f"Code a single memory {SINGLE_MEMORY_EMOJI}"):
         st.session_state.page = SINGLE_MEMORY_PAGE
         st.rerun()
@@ -182,17 +82,23 @@ def home_page():
     st.caption(CONTACT_SUPPORT_MESSAGE)
 
 
-def format_coded_result(result):
-    for code, formatted_code in SLV_FORMATTED_CODES.items():
+def format_coded_result(result, formatted_codes):
+    for code, formatted_code in formatted_codes.items():
         result = result.replace(code, formatted_code)
     return result
+
+
+def get_coding_task_formatted_codes():
+    coding_task = validate_model_config()[CODING_TASK]
+    task_parameters = PARAMETERS_BY_CODING_TASK[coding_task]
+    return task_parameters[FORMATTED_CODES_DICT], task_parameters[COLOR_CODING_LEGEND]
 
 
 def single_memory_page():
     st.title(f"{SINGLE_MEMORY_EMOJI} Code a Single Memory")
     show_current_config_info()
     memory_text = st.text_area("Paste the memory you want to code")
-    if st.button("Code") and memory_text:  # TODO this and might be problematic
+    if st.button("Code") and memory_text:
         try:
             with st.spinner("Model generating your coded result..."):
                 result, message_history, generation_log = code_text(memory_text)
@@ -201,8 +107,9 @@ def single_memory_page():
             handle_generation_error(e)
         else:
             st.subheader("Coded result &mdash; color coded and highlighted")
-            st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {SLV_COLOR_CODING_LEGEND}")
-            st.markdown(format_coded_result(result))
+            formatted_codes, color_coding_legend = get_coding_task_formatted_codes()
+            st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {color_coding_legend}")
+            st.markdown(format_coded_result(result, formatted_codes))
             st.subheader("Coded result &mdash; as plain text with copy button")
             st.code(result, language=None)  # using st.code to have a built-in copy button
     page_bottom()
@@ -250,9 +157,10 @@ def multiple_memories_page():
     if st.button("Code Memories") and memories:
         try:
             with st.spinner("Model generating your coded results..."):
+                messages = [{"role": "system", "content": get_system_prompt()}]  # save process time
                 results, logs = [], []
                 for memory in memories:
-                    result, message_history, generation_log = code_text(memory)
+                    result, message_history, generation_log = code_text(memory, messages)
                     results.append(result)
                     logs.append(generation_log)
                 save_generation_log(multiple_generation_logs=logs)
@@ -308,18 +216,14 @@ def manual_page():
 
     page_bottom()
 
-def chat_with_llm(user_message, history=None):  # TODO remove
-    # Placeholder LLM call (replace with your real HuggingChat/LLM call)
-    return f"You said '{user_message}', and I’m responding intelligently."
-
 
 def get_current_model_config_message():
     model_config = validate_model_config()
     model_service_description = MODEL_SERVICES_DESCRIPTION[model_config[MODEL_SERVICE]]
     return (f"You are currently working with the following **model configuration**:\n"
             f"- The **{model_service_description.upper()}** model\n"
-            f"- Trained on the base-LLM: **{model_config[BASE_LLM]}**\n"
-            f"- For the coding task: **{model_config[CODING_TASK]}**\n")
+            f"- Based on the LLM: **{model_config[BASE_LLM]}**\n"
+            f"- Trained for the coding task: **{model_config[CODING_TASK]}**\n")
 
 def show_current_config_info():
     config_ifo_message = get_current_model_config_message()
@@ -336,7 +240,7 @@ def chat_page():
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]  # TODO: change to a function that creates the system prompt based on the current coding task
+        st.session_state.chat_history = [{"role": "system", "content": get_system_prompt(CHAT_TASK)}]
 
     # Display chat history
     for message in st.session_state.chat_history:
@@ -367,31 +271,10 @@ def chat_page():
                         "but maybe **first save a copy of the conversation so far**")
                 st.error(e)
 
-            # TODO: remove this if real LLM chat works!
-            # # Call LLM and append its response
-            # llm_response = chat_with_llm(user_input, history=st.session_state.chat_history)
-            # st.session_state.chat_history.append({"role": "assistant", "content": llm_response})
-
-            # # Clear input field  # TODO maybe remove?
-            # st.session_state.chat_input = ""
-
             # # Rerun to show updated messages  # TODO trying with no rerun
             # st.rerun()
 
-    # user_input = st.text_input("Your message:", key="chat_input", on_change=submit) # TODO maybe remove?
     st.text_input("Your message:", key="chat_input", on_change=submit)
-    # if st.button("Send"):  # TODO: trying with no button
-    #     submit()
-
-    # if st.session_state.chat_history:
-    #     if st.button("Clear chat history ::"):
-
-    # TODO: in the following section there used to be clearing of chat_history...
-
-    # if st.button(HOME_BUTTON_TEXT):
-    #     st.session_state.page = HOME_PAGE
-    #     st.session_state.chat_history = []  # Optional: clear chat on exit
-    #     st.rerun()
 
     page_bottom()
 
@@ -404,8 +287,11 @@ def debug_page():
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
     show_current_config_info()
     st.info("Trying the color coding with the example output...")
-    st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {SLV_COLOR_CODING_LEGEND}")
-    st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL))
+    formatted_codes, color_coding_legend = get_coding_task_formatted_codes()
+    st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {color_coding_legend}")
+    # EXAMPLE_OUTPUT_BY_FREE_MODEL = """I had an essay due the same day as my presentation _ext_neu_ so I thought I could do the presentation without preparing _int_neg_ so I just did all my slides _int_neu_ and for some reason I didn't save it that night _ext_neu_ so I had to do it _int_neu_ and the class was in the afternoon _ext_neu_ so I did it in the morning _int_neu_ and then cause I had class in the morning _ext_neu_ so I did it in a real rush kind of way _int_neg_ so it was pretty screwed up _int_neg_. By the time I got to the class for some reason I was the first one up _int_neu_. I couldn't have any time to prepare for it _int_neg_ so I just went up and talked about my presentation _int_neu_. It was about some Catholic like thing _int_neu_. That's all I remember _ext_neu_. Cause they were in Catholic - I'm not really religious or anything like that _ext_neu_ so I don't know some of the terms or some of the stuff _int_neg_ so by the time I finished my presentation I was like, everything was kind of screwed up _int_neg_ cause I knew I didn't get the terms right _int_neg_. There were some religious stuff that I messed up _int_neg_ and then it was like a final presentation _ext_neu_ so I knew it would cost a lot of marks in my final grade _int_neg_. By the time I finished it the teacher was shaking his head a bit like that _int_neg_ and then ya so I sat down and ya I was pretty angry at myself _int_neg_. That was about it _ext_neu_."""
+    EXAMPLE_OUTPUT_BY_FREE_MODEL = """Last summer, Mommy and Daddy took me and my little brother to the zoo. _high_ It was super hot, and I got sticky from my ice cream, but I didn’t care. _high_ We saw a giraffe eat leaves from a tall tree—its tongue was purple! _high_ I laughed so hard when the monkey made faces at us. _high_ Then we rode the zoo train. _high_ It went choo-choo and I waved at the people like I was the driver. _high_ Before we left, Daddy let me pick a toy from the gift shop, and I got a tiny lion with fluffy fur. _high_ I named him Roary and he sleeps in my bed every night now. _high_"""
+    st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL, formatted_codes))
 
     conn = st.connection("gsheets", type=GSheetsConnection)
     st.code(dir(conn))
@@ -413,19 +299,18 @@ def debug_page():
     st.caption("This is the old DF before adding a row: (after third)")
     # print("This is the old DF before adding a row: (after third)")
     st.write(old_df)
-    # print(old_df)
-    # new_row = [1, "n", "free", "first input", "YAY!"]
-    new_row = [2, "n", "free", "second input", "PRAYYYY"]
-    # new_row = [3, "n", "free", "third input", "PLEASE READ IT!"]
-    # new_row = [4, "n", "free", "forth input", "4444"]
-    # new_df = pd.DataFrame([new_row], columns=["timestamp", "user", "model", "input", "output"])
-    # conn.update(data=new_df)
-    old_df.loc[len(old_df)] = new_row
-    conn.update(data=old_df)
-    conn.reset()
-    # st.code(help(conn.update))
-    # st.code(help(conn.read))
-    # help(conn.reset)
+    # # print(old_df)
+    # update_df = False
+    # if update_df:
+    #     new_row = [1, "n", FREE_SERVICE, "free", SEGMENT_LOCUS_VALENCE, "input", "{}", "output", "coding"]
+    #     # new_df = pd.DataFrame([new_row], columns=["timestamp", "user", "model", "input", "output"])
+    #     # conn.update(data=new_df)
+    #     old_df.loc[len(old_df)] = new_row
+    # conn.update(data=old_df)
+    # conn.reset()
+    # # st.code(help(conn.update))
+    # # st.code(help(conn.read))
+    # # help(conn.reset)
 
 
     # # TODO: this is claude's suggestion:
@@ -446,12 +331,6 @@ def debug_page():
     # conn.reset()
 
     page_bottom()
-
-
-def validate_model_config():
-    if "model_config" not in st.session_state:
-        st.session_state.model_config = {key: value for key, value in DEFAULT_MODEL_CONFIG.items()}
-    return st.session_state.model_config
 
 
 def main():

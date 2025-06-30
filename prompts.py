@@ -1,27 +1,66 @@
-SYSTEM_PROMPT = """You are a useful assistant for a clinical psychology research. You will be given as inputs text representing the patients memories. For each input you get, you will only output the same input, with additional coding for each segment. The codings are in the pattern of _classification_valence_; The classification part can be one of the following 2 options: int (representing internal segment of memory, which means it pertains directly to the main event of the memory) or ext (representing external segment of memory, which means it is not part of the main event of the memory). The valence part can be one of the following 3 options, representing the valence of that segment of the memory: neg (for neagative), neu (for neutral) or posit (for positive).
-Here is an example for successful coding of a memory given as an input:
-The original input is:
-I'm on stage and I start speaking my speech of any topic and I do start babbling and messing up on words. It was right after lunch. I even sound nervous and then people's reactions are giving off a kind of what is this guy doing he can't even give a speech right? It was similar to what happened to the principal last year. As I go on people start even leaving or just don't even enjoy it. They start yawning, etc. and I don't break down though. I just continue all the way till the end but at the same time I have that same distressed feeling the whole way. 
-This input's main event of the memory is:
-Messing up a speech on stage
-Therefore the successful coding is:
-I'm on stage _int_neu_ and I start speaking my speech of any topic _int_neu_ and I do start babbling _int_neg_ and messing up on words. _int_neg_ It was right after lunch. _ext_neu_ I even sound nervous _int_neg_ and then people's reactions are giving off a kind of what is this guy doing he can't even give a speech right? _int_neg_ It was similar to what happened to the principal last year. _ext_neu_ As I go on people start even leaving _int_neg_ or just don't even enjoy it. _int_neg_ They start yawning, etc. _int_neg_ and I don't break down though. _int_posit_ I just continue all the way till the end _int_posit_ but at the same time I have that same distressed feeling the whole way. _int_neg_"""
+from constants import *
 
-EXAMPLE_INPUT = """I had an essay due the same day as my presentation so I thought I could do the presentation without preparing so I just did all my slides and for some reason I didn't save it that night so I had to do it and the class was in the afternoon so I did it in the morning and then cause I had class in the morning so I did it in a real rush kind of way so it was pretty screwed up. By the time I got to the class for some reason I was the first one up. I couldn't have any time to prepare for it so I just went up and talked about my presentation. It was about some Catholic like thing. That's all I remember. Cause they were in Catholic - I'm not really religious or anything like that so I don't know some of the terms or some of the stuff so by the time I finished my presentation I was like, everything was kind of screwed up cause I knew I didn't get the terms right. There were some religious stuff that I messed up and then it was like a final presentation so I knew it would cost a lot of marks in my final grade. By the time I finished it the teacher was shaking his head a bit like that and then ya so I sat down and ya I was pretty angry at myself. That was about it."""
-EXAMPLE_OUTPUT = """I had an essay due the same day as my presentation _ext_neu_ so I thought I could do the presentation without preparing _int_neg_ so I just did all my slides _int_neu_ and for some reason I didn't save it that night _ext_neu_ so I had to do it _int_neu_ and the class was in the afternoon _ext_neu_ so I did it in the morning _int_neu_ and then cause I had class in the morning _ext_neu_ so I did it in a real rush kind of way _int_neg_ so it was pretty screwed up _int_neg_. By the time I got to the class for some reason I was the first one up _int_neu_. I couldn't have any time to prepare for it _int_neg_ so I just went up and talked about my presentation _int_neu_. It was about some Catholic like thing _int_neu_. That's all I remember _ext_neu_. Cause they were in Catholic - I'm not really religious or anything like that _ext_neu_ so I don't know some of the terms or some of the stuff _int_neg_ so by the time I finished my presentation I was like, everything was kind of screwed up _int_neg_ cause I knew I didn't get the terms right _int_neg_. There were some religious stuff that I messed up _int_neg_ and then it was like a final presentation _int_neu_ so I knew it would cost a lot of marks in my final grade _int_neg_. By the time I finished it the teacher was shaking his head a bit like that _int_neg_ and then ya so I sat down and ya I was pretty angry at myself _int_neg_. That was about it _ext_neu_."""
-EXAMPLE_OUTPUT_BY_FREE_MODEL = """I had an essay due the same day as my presentation _ext_neu_ so I thought I could do the presentation without preparing _int_neg_ so I just did all my slides _int_neu_ and for some reason I didn't save it that night _ext_neu_ so I had to do it _int_neu_ and the class was in the afternoon _ext_neu_ so I did it in the morning _int_neu_ and then cause I had class in the morning _ext_neu_ so I did it in a real rush kind of way _int_neg_ so it was pretty screwed up _int_neg_. By the time I got to the class for some reason I was the first one up _int_neu_. I couldn't have any time to prepare for it _int_neg_ so I just went up and talked about my presentation _int_neu_. It was about some Catholic like thing _int_neu_. That's all I remember _ext_neu_. Cause they were in Catholic - I'm not really religious or anything like that _ext_neu_ so I don't know some of the terms or some of the stuff _int_neg_ so by the time I finished my presentation I was like, everything was kind of screwed up _int_neg_ cause I knew I didn't get the terms right _int_neg_. There were some religious stuff that I messed up _int_neg_ and then it was like a final presentation _ext_neu_ so I knew it would cost a lot of marks in my final grade _int_neg_. By the time I finished it the teacher was shaking his head a bit like that _int_neg_ and then ya so I sat down and ya I was pretty angry at myself _int_neg_. That was about it _ext_neu_."""
-EXAMPLE_OUTPUT_BY_FREE_MODEL2 = """I had an essay due the same day as my presentation _ext_neu_ so I thought I could do the presentation without preparing _int_neg_ so I just did all my slides _int_neu_ and for some reason I didn't save it that night _ext_neu_ so I had to do it _int_neu_ and the class was in the afternoon _ext_neu_ so I did it in the morning _int_neu_ and then cause I had class in the morning _ext_neu_ so I did it in a real rush kind of way _int_neg_ so it was pretty screwed up _int_neg_. By the time I got to the class for some reason I was the first one up _int_neu_. I couldn't have any time to prepare for it _int_neg_ so I just went up and talked about my presentation _int_neu_. It was about some Catholic like thing _int_neu_. That's all I remember _ext_neu_. Cause they were in Catholic _ext_neu_ - I'm not really religious or anything like that _ext_neu_ so I don't know some of the terms or some of the stuff _int_neg_ so by the time I finished my presentation I was like, everything was kind of screwed up _int_neg_ cause I knew I didn't get the terms right _int_neg_. There were some religious stuff that I messed up _int_neg_ and then it was like a final presentation _ext_neu_ so I knew it would cost a lot of marks in my final grade _int_neg_. By the time I finished it the teacher was shaking his head a bit like that _int_neg_ and then ya so I sat down and ya I was pretty angry at myself _int_neg_. That was about it _ext_neu_."""
-GENERATED_OUTPUT_OVER_FICTIONAL_MEMORIES_FILE = """I had just moved to a new school _ext_neu_ and it was my first day. _ext_neu_ During lunch, I went to find a place to sit _int_neu_ but all the tables were full. _int_neu_ I stood there with my tray, looking around, _int_neu_ and people kept glancing at me. _int_neg_ I finally found a spot at the end of a table _int_neu_ and sat down. _int_neu_ The group there suddenly got quiet _int_neg_ and started whispering. _int_neg_ One girl loudly asked who I was. _int_neg_ I tried to introduce myself _int_neu_ but knocked over my milk. _int_neg_ It spilled all over my pants _int_neg_ and the table. _int_neg_ Everyone started laughing _int_neg_ and pointing. _int_neg_ I tried to clean it up _int_neu_ but made it worse. _int_neg_ The cafeteria monitor came over with paper towels _ext_neu_ but by then my food was ruined _int_neg_ and my pants were soaked. _int_neg_ I had to go to the nurse's office _ext_neu_ to call home for new clothes. _ext_neu_ I spent the rest of the day smelling like sour milk _int_neg_ and everyone kept calling me "milk boy" _int_neg_ for weeks after. _ext_neu_
-My grandma died _int_neg_ and I had to give a speech at her funeral. _int_neu_ I was really close with her _int_neu_ but I kept putting off writing anything because thinking about it made me too sad. _int_neg_ The morning of the funeral _ext_neu_ I quickly wrote some notes on my phone. _int_neu_ When it was my turn to speak, _int_neu_ I went up to the podium _int_neu_ and my mind just went blank. _int_neg_ I couldn't even read my notes properly because my hands were shaking so bad. _int_neg_ I started crying in the middle of a sentence _int_neg_ and couldn't stop. _int_neg_ My dad had to come up and help me back to my seat. _int_neg_ I felt like I let my grandma down _int_neg_ because I couldn't even say anything nice about her. _int_neg_ Everyone kept telling me it was okay _ext_neu_ but I saw my aunt looking disappointed. _int_neg_ What made it worse _int_neg_ was my cousin went after me _ext_neu_ and gave this perfect speech _ext_neu_ with funny stories about grandma _ext_neu_ and everyone was laughing and nodding. _ext_neu_ I just sat there feeling like I'd ruined _int_neg_ the only chance I had to say goodbye to her properly. _int_neg_
-I went on this camping trip _ext_neu_ with some friends I wasn't super close with. _ext_neu_ It was raining the whole first day _ext_neu_ so we stayed in our tents. _ext_neu_ The second night _ext_neu_ we were sitting around the fire _ext_neu_ and someone suggested we play truth or dare. _int_neu_ When it was my turn _int_neu_ I picked truth _int_neu_ and they asked about my biggest fear. _int_neu_ I don't know why _int_neu_ but I started talking about how my parents got divorced when I was 10 _int_neg_ and how I was afraid of ending up alone. _int_neg_ I got really emotional _int_neg_ and started crying a little bit. _int_neg_ Everyone got super quiet _int_neg_ and uncomfortable. _int_neg_ One guy was like "dude it's just a game" _int_neg_ and changed the subject. _int_neg_ For the rest of the trip _ext_neu_ everyone treated me differently, _int_neg_ like I was fragile or something. _int_neg_ They'd stop talking when I came around _int_neg_ or change the subject. _int_neg_ On the last day _ext_neu_ I overheard two of them _ext_neu_ making fun of me _int_neg_ for "having a breakdown over truth or dare." _int_neg_ I pretended I was sick _int_neg_ for the last day _ext_neu_ and just stayed in my tent _ext_neu_ until it was time to go home. _ext_neu_ None of them really talked to me much _int_neg_ after that trip. _ext_neu_"""
+SYSTEM_INTRO = "You are a useful assistant for a clinical psychology research, used to code memory segments of patients by a coding scheme, so they can be used for research."
 
-CHAT_SYSTEM_PROMPT = """You are a useful assistant for a clinical psychology research. The researchers chat with you to assist them to automatically code their clinical data into the corresponding classifications, codes and labels, based on the different tasks they give you. They may provide feedback on your responses, to help you improve your answers to better fit their needs."""
+# notice it uses format-string for input_format and output_format!
+CHAT_INSTRUCTION_FORMAT = """INSTRUCTION:
+You are used as a chat assistant. Your role is to provide guidance, answer questions, and assist through natural dialogue in a multi-turn conversation format.
+Below are the ORIGINAL task format specifications (for reference only - these describe the task the researchers are working on, NOT how you should respond):
+--- REFERENCE MATERIALS (DO NOT FOLLOW THESE FORMATS IN YOUR RESPONSES) ---
+ORIGINAL INPUT FORMAT:
+```
+{0}
+```
+ORIGINAL OUTPUT FORMAT:
+```
+{1}
+```
+--- END REFERENCE MATERIALS ---
+YOUR ACTUAL ROLE:
+- Respond as a helpful chat assistant using natural conversation
+- Answer questions about the coding task described above
+- Provide guidance and support for the researchers
+- Use normal chat responses unless explicitly asked to demonstrate the original formats
+- Do NOT automatically format your responses according to the input/output specifications above
+Always maintain a helpful, conversational tone while assisting with this coding task."""
 
-CHAT_EXAMPLE_INPUT = """Please help me code segments of memories into one of 2 codes: _ext_ if they are external, _int_ if they are internal. For example, when a patient writes about their fear of dogs, and the segment is "I used to like walking in the park" - what is the correct coding?"""
-CHAT_EXAMPLE_OUTPUT = """To determine the correct coding, let's break down the segment "I used to like walking in the park".
 
-This segment appears to be describing a personal experience or feeling, which is internal to the patient. It's not directly related to an external event or stimulus, but rather the patient's internal state or preference.
+def parse_example_for_system_prompt(example):
+    if type(example) is str:
+        return "\n" + example
+    parsed = ""
+    if INPUT in example:
+        parsed += f"\n{INPUT}: {example[INPUT]}"
+    if OUTPUT in example:
+        parsed += f"\n{OUTPUT}: {example[OUTPUT]}"
+    if EXPLANATION in example:
+        parsed += f"\n{EXPLANATION}: {example[EXPLANATION]}"
+    return parsed
 
-Therefore, the correct coding for this segment would be "_int_".
 
-It's describing an internal experience or feeling, rather than an external event or circumstance."""
+def get_private_examples(sheet):
+    if not sheet:
+        return []
+    return []  # TODO: needs implementation!
+
+
+def get_system_prompt(prompt_type_task=DIRECT_CODING_TASK):
+    coding_task = validate_model_config()[CODING_TASK]
+    parameters = PARAMETERS_BY_CODING_TASK[coding_task]
+    task_instruction = parameters[TASK_DEFINITION]
+    input_format, output_format = parameters[INPUT_FORMAT_INSTRUCTION], parameters[OUTPUT_FORMAT_INSTRUCTION]
+    system_prompt = f"{SYSTEM_INTRO}\n\nCODING SCHEME:\n{task_instruction}"
+    if prompt_type_task == CHAT_TASK:
+        system_prompt += f"\n\n{CHAT_INSTRUCTION_FORMAT.format(input_format, output_format)}"
+    else:  # prompt_type_task == DIRECT_CODING_TASK
+        system_prompt += f"\n\nINPUT FORMAT:\n{input_format}\n\nOUTPUT FORMAT:\n{output_format}"
+    public_correct_examples, public_incorrect_examples = parameters[PUBLIC_CORRECT_EXAMPLES], parameters[PUBLIC_INCORRECT_EXAMPLES]
+    private_correct_examples = get_private_examples(parameters[PRIVATE_CORRECT_EXAMPLES_SHEET])
+    private_incorrect_examples = get_private_examples(parameters[PRIVATE_INCORRECT_EXAMPLES_SHEET])
+    for examples, title in [(public_correct_examples + private_correct_examples, "EXAMPLES FOR CORRECT CODINGS"),
+                            (public_incorrect_examples + private_incorrect_examples, "EXAMPLES FOR INCORRECT CODINGS")]:
+        if examples:
+            system_prompt += f"\n\n{title}:"
+            for example in public_correct_examples:
+                system_prompt += parse_example_for_system_prompt(example)
+    return system_prompt
