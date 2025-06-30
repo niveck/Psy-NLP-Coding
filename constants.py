@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 
 # page names
 WELCOME_PAGE = "welcome"
@@ -66,7 +67,7 @@ COH_FORMATTED_CODES = {f"_{lvl}_": f":gray-background[:{lvl_color}[***\\_{lvl}\\
 COH_COLOR_CODING_LEGEND = ", ".join([f":{lvl_color}[{lvl}]"
                                      for lvl, lvl_color in COH_LEVELS_AND_COLORS.items()])
 
-# examples keywords
+# examples keywords (for few-shots)
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 EXPLANATION = "EXPLANATION"
@@ -168,3 +169,9 @@ def validate_model_config():
     if "model_config" not in st.session_state:
         st.session_state.model_config = {key: value for key, value in DEFAULT_MODEL_CONFIG.items()}
     return st.session_state.model_config
+
+
+def get_gsheets_connection():
+    if "gsheets_connection" not in st.session_state:
+        st.session_state.gsheets_connection = st.connection("gsheets", type=GSheetsConnection)
+    return st.session_state.gsheets_connection

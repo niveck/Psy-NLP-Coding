@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 from io import BytesIO
-from streamlit_gsheets import GSheetsConnection
 
 from prompting import get_system_prompt, code_text, generate_for_chat, save_generation_log
 from constants import *  # includes st
@@ -292,7 +291,7 @@ def debug_page():
     EXAMPLE_OUTPUT_BY_FREE_MODEL = """Last summer, Mommy and Daddy took me and my little brother to the zoo. _high_ It was super hot, and I got sticky from my ice cream, but I didn’t care. _high_ We saw a giraffe eat leaves from a tall tree—its tongue was purple! _high_ I laughed so hard when the monkey made faces at us. _high_ Then we rode the zoo train. _high_ It went choo-choo and I waved at the people like I was the driver. _high_ Before we left, Daddy let me pick a toy from the gift shop, and I got a tiny lion with fluffy fur. _high_ I named him Roary and he sleeps in my bed every night now. _high_"""
     st.markdown(format_coded_result(EXAMPLE_OUTPUT_BY_FREE_MODEL, formatted_codes))
 
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    conn = get_gsheets_connection()
     st.code(dir(conn))
     old_df = conn.read(ttl=0)
     st.caption("This is the old DF before adding a row: (after third)")

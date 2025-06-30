@@ -3,7 +3,6 @@ import time
 import pandas as pd
 from together import Together
 from huggingface_hub import InferenceClient
-from streamlit_gsheets import GSheetsConnection
 from constants import *
 
 
@@ -83,7 +82,7 @@ def get_generation_log(service, base_llm, coding_task, messages,
 
 def save_generation_log(single_generation_log: dict[str, str] = None,
                         multiple_generation_logs: list[dict[str]] = None):
-    conn = st.connection("gsheets", type=GSheetsConnection)  # TODO: check if conn already exists
+    conn = get_gsheets_connection()
     df = conn.read(ttl=0)
     if single_generation_log:
         df.loc[len(df)] = single_generation_log
