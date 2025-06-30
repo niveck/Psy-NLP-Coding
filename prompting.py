@@ -7,14 +7,16 @@ from streamlit_gsheets import GSheetsConnection
 from constants import *
 
 
-def parse_example_for_system_prompt(example):
+def parse_example_for_system_prompt(example, output_prefix=""):
     if type(example) is str:
         return "\n" + example
     parsed = ""
+    if output_prefix and not output_prefix.endswith(" "):
+        output_prefix += " "
     if INPUT in example:
         parsed += f"\n{INPUT}: {example[INPUT]}"
     if OUTPUT in example:
-        parsed += f"\n{OUTPUT}: {example[OUTPUT]}"
+        parsed += f"\n{output_prefix}{OUTPUT}: {example[OUTPUT]}"
     if EXPLANATION in example:
         parsed += f"\n{EXPLANATION}: {example[EXPLANATION]}"
     return parsed
@@ -36,27 +38,29 @@ def get_system_prompt(prompt_type_task=DIRECT_CODING_TASK):
         system_prompt += f"\n\n{CHAT_INSTRUCTION_FORMAT.format(input_format, output_format)}"
     else:  # prompt_type_task == DIRECT_CODING_TASK
         system_prompt += f"\n\nINPUT FORMAT:\n{input_format}\n\nOUTPUT FORMAT:\n{output_format}"
+        system_prompt += f"\n{STRICT_OUTPUT_FORMAT_REMINDER}"
     public_correct_examples, public_incorrect_examples = parameters[PUBLIC_CORRECT_EXAMPLES], parameters[PUBLIC_INCORRECT_EXAMPLES]
     private_correct_examples = get_private_examples(parameters[PRIVATE_CORRECT_EXAMPLES_SHEET])
     private_incorrect_examples = get_private_examples(parameters[PRIVATE_INCORRECT_EXAMPLES_SHEET])
-    for examples, title in [(public_correct_examples + private_correct_examples, "EXAMPLES FOR CORRECT CODINGS"),
-                            (public_incorrect_examples + private_incorrect_examples, "EXAMPLES FOR INCORRECT CODINGS")]:
+    for examples, title, output_prefix in [(public_correct_examples + private_correct_examples, "EXAMPLES FOR CORRECT CODINGS", "CORRECT"),
+                                           (public_incorrect_examples + private_incorrect_examples, "EXAMPLES FOR INCORRECT CODINGS", "INCORRECT")]:
         if examples:
             system_prompt += f"\n\n{title}:"
-            for example in public_correct_examples:
-                system_prompt += parse_example_for_system_prompt(example)
+            for example in examples:
+                system_prompt += parse_example_for_system_prompt(example, output_prefix)
     return system_prompt
-
-
-# TODO: add a check in st.state so they can be defined only once!
-together_client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
-hf_client = InferenceClient(provider="hf-inference", api_key=st.secrets["HF_API_KEY"])
 
 
 def get_model_config_parameters():
     model_config = validate_model_config()
     service = model_config[MODEL_SERVICE]
-    client = hf_client if service == PRIVATE_SERVICE else together_client
+    if service not in st.session_state:
+        if service == PRIVATE_SERVICE:
+            client = InferenceClient(provider="hf-inference", api_key=st.secrets["HF_API_KEY"])
+        else:  # service == FREE_SERVICE
+            client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
+        st.session_state[service] = client
+    client = st.session_state[service]
     base_llm = model_config[BASE_LLM]
     coding_task = model_config[CODING_TASK]
     return client, service, base_llm, coding_task

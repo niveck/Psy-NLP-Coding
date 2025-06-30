@@ -161,6 +161,8 @@ YOUR ACTUAL ROLE:
 - Do NOT automatically format your responses according to the input/output specifications above
 Always maintain a helpful, conversational tone while assisting with this coding task."""
 
+STRICT_OUTPUT_FORMAT_REMINDER = "IMPORTANT! Remember to ONLY output the coded text according to this format, and to NOT add any other notes or explanations!"
+
 
 def validate_model_config():
     if "model_config" not in st.session_state:
