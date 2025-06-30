@@ -3,7 +3,8 @@ import pandas as pd
 from pathlib import Path
 from io import BytesIO
 
-from prompting import get_system_prompt, code_text, generate_for_chat, save_generation_log
+from prompting import get_system_prompt, code_text, save_generation_log, \
+    generate_for_chat_with_write_stream
 from constants import *  # includes st
 
 
@@ -236,45 +237,39 @@ def chat_page():
     st.markdown("Welcome to the chat interface!  \n"
                 "Use this page to interact with our proprietary LLM.")
     show_current_config_info()
-    st.caption(f"Use the ***Enter*** {ENTER_KEYBOARD_EMOJI} key to send your message and get an answer.")
+    formatted_codes, _ = get_coding_task_formatted_codes()
 
     # Initialize chat history if it doesn't exist
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [{"role": "system", "content": get_system_prompt(CHAT_TASK)}]
+        st.session_state.chat_history = [
+            {"role": "system", "content": get_system_prompt(CHAT_TASK)}]
 
     # Display chat history
     for message in st.session_state.chat_history:
-        content = message["content"].replace("_", "\\_")
-        if message["role"] == "user":
-            st.markdown(f":blue-background[**You:**] {content}")
-        elif message["role"] == "assistant":
-            st.markdown(f":violet-background[**LLM:**] {content}")
-        else:  # message["role"] == "system"
+        if message["role"] == "system":
             continue
+        with st.chat_message(message["role"]):
+            # st.markdown(message["content"].replace("_", "\\_"))
+            st.markdown(format_coded_result(message["content"], formatted_codes))
 
-    # User input area
-    def submit():
-        if "user_input" not in st.session_state:
-            st.session_state["user_input"] = ""
-        st.session_state["user_input"] = st.session_state["chat_input"]
-        st.session_state["chat_input"] = ""
-        user_input = st.session_state["user_input"]
-        if user_input.strip():
-            # Append user message to history
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
+    # st.text_input("Your message:", key="chat_input", on_change=submit)
+    if prompt := st.chat_input("Your message:"):
+        with st.chat_message("user"):
+            st.markdown(format_coded_result(prompt, formatted_codes))
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+        with st.chat_message("assistant"):
+            # st.write_stream(response := list(f"ECHO: {prompt}"))
+            # response = "".join(response)  # TODO remove!
             try:
-                with st.spinner("Model generating an answer for you..."):
-                    generate_for_chat(st.session_state.chat_history)
+                response, log = generate_for_chat_with_write_stream(st.session_state.chat_history)
             except Exception as e:
-                st.info("Connection to the model has crashed...\n"
-                        "You should refresh the page, "
-                        "but maybe **first save a copy of the conversation so far**")
+                st.warning("Connection to the model has crashed...\n"
+                           "You should refresh the page, "
+                           "but maybe **first save a copy of the conversation so far**")
                 st.error(e)
-
-            # # Rerun to show updated messages  # TODO trying with no rerun
-            # st.rerun()
-
-    st.text_input("Your message:", key="chat_input", on_change=submit)
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
+        save_generation_log(single_generation_log=log)
+        st.rerun()  # to format the codes in the text
 
     page_bottom()
 

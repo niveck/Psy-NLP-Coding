@@ -113,10 +113,43 @@ def raw_generation(client, base_llm, messages, generation_kwargs):
     return output
 
 
+def raw_stream_generation(client, base_llm, messages, generation_kwargs):
+    return client.chat.completions.create(model=base_llm, messages=messages,
+                                          stream=True, **generation_kwargs)
+
+
+def join_write_stream(stream):
+    content_parts = []
+    def generator():
+        for chunk in stream:
+            try:
+                content = chunk.choices[0].delta.content
+                if content:
+                    content_parts.append(content)
+                    yield content
+            except (AttributeError, IndexError, KeyError):
+                # Skip malformed chunks
+                continue
+    st.write_stream(generator())
+    return "".join(content_parts)
+
+
+def generate_for_chat_with_write_stream(messages: list[dict[str, str]], temperature: float = 0):
+    # used for streaming the answer directly
+    client, service, base_llm, coding_task = get_model_config_parameters()
+    generation_kwargs = dict(temperature=temperature)
+    output = join_write_stream(raw_stream_generation(client, base_llm, messages, generation_kwargs))
+    log = get_generation_log(service, base_llm, coding_task, messages, generation_kwargs, output, CHAT_TASK)
+    # appending the message to all messages should be outside of assistant scope
+    return output, log
+
+
+
 def generate_for_chat(messages: list[dict[str, str]], temperature: float = 0):
+    # original deprecated function
     client, service, base_llm, coding_task = get_model_config_parameters()
     generation_kwargs = dict(temperature=temperature)
     output = raw_generation(client, base_llm, messages, generation_kwargs)
     log = get_generation_log(service, base_llm, coding_task, messages, generation_kwargs, output, CHAT_TASK)
-    messages.append({"role": "assistant", "content": output})  # first add to show user  # TODO: maybe st.rerun()?
+    messages.append({"role": "assistant", "content": output})  # first add to show user
     save_generation_log(single_generation_log=log)  # then save log
