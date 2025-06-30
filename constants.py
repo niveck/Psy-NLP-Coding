@@ -13,18 +13,18 @@ HIGHLIGHT_PAGE = "highlight"
 
 # visuals
 # emojis shortcuts link: https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
-HOME_EMOJI = ":house:"
+HOME_EMOJI = "🏠"  # ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
-LLM_EMOJI = ":robot_face:"
-ENTER_KEYBOARD_EMOJI = ":leftwards_arrow_with_hook:"  # :keyboard:
-SINGLE_MEMORY_EMOJI = ":green_book:"
-MULTIPLE_MEMORIES_EMOJI = ":books:"
-MANUAL_EMOJI = ":mechanical_arm:"
-CLEAR_HISTORY_EMOJI = ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:", ":broom:", ":x:"
-DEBUG_EMOJI = ":hammer_and_wrench:"
-SAVE_EMOJI = ":floppy_disk:"
+LLM_EMOJI = "🤖"  # ":robot_face:"
+ENTER_KEYBOARD_EMOJI = "↩️"  # ":leftwards_arrow_with_hook:"  # :keyboard:
+SINGLE_MEMORY_EMOJI = "📗"  # ":green_book:"
+MULTIPLE_MEMORIES_EMOJI = "📚"  # ":books:"
+MANUAL_EMOJI = "🦾"  # ":mechanical_arm:"
+CLEAR_HISTORY_EMOJI = "🚮"  # ":put_litter_in_its_place:"  # ":recycle:", ":wastebasket:", ":broom:", ":x:"
+DEBUG_EMOJI = "🛠️"  # ":hammer_and_wrench:"
+SAVE_EMOJI = "💾"  # ":floppy_disk:"
 SAVE_CHANGES_BUTTON_TEXT = f"{SAVE_EMOJI} Save Changes"
-PALETTE_EMOJI = ":art:"
+PALETTE_EMOJI = "🎨"  # ":art:"
 
 GENERAL_COLOR_CODING_LEGEND_TITLE = "**Color coding legend:**"
 CONTACT_SUPPORT_MESSAGE = "For additional support you can email: niv.eckhaus@mail.huji.ac.il"
