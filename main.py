@@ -233,7 +233,7 @@ def show_current_config_info():
 
 
 def chat_page():
-    st.title(f"{LLM_EMOJI} Chat with the Lab's LLM")
+    st.title(f"{LLM_BACKUP_EMOJI} Chat with the Lab's LLM")
     st.markdown("Welcome to the chat interface!  \n"
                 "Use this page to interact with our proprietary LLM.")
     show_current_config_info()

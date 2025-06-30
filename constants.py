@@ -16,6 +16,7 @@ HIGHLIGHT_PAGE = "highlight"
 HOME_EMOJI = "🏠"  # ":house:"
 HOME_BUTTON_TEXT = f"{HOME_EMOJI} Back Home"
 LLM_EMOJI = "🤖"  # ":robot_face:"
+LLM_BACKUP_EMOJI = "🤖︎"  # because of a bug with the streamlit display
 ENTER_KEYBOARD_EMOJI = "↩️"  # ":leftwards_arrow_with_hook:"  # :keyboard:
 SINGLE_MEMORY_EMOJI = "📗"  # ":green_book:"
 MULTIPLE_MEMORIES_EMOJI = "📚"  # ":books:"
