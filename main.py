@@ -13,11 +13,13 @@ def get_list_of_lines_from_file(file_name):
 
 
 def load_users():
-    return get_list_of_lines_from_file("authorized_users.txt")
+    # return get_list_of_lines_from_file("authorized_users.txt")
+    return list(st.secrets["passwords"].keys())
 
 
 def get_developer_users():
-    return get_list_of_lines_from_file("developer_users.txt")
+    # return get_list_of_lines_from_file("developer_users.txt")
+    return st.secrets["developer_users"]
 
 
 def page_bottom():
@@ -37,6 +39,7 @@ def welcome_page():
 
     if selected_user == "New user":
         st.warning("Please contact our lab for permissions.")
+        st.caption(CONTACT_SUPPORT_MESSAGE)
         st.stop()
 
     password = st.text_input("Enter your password", type="password")
