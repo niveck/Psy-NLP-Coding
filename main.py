@@ -160,12 +160,17 @@ def multiple_memories_page():
     if st.button("Code Memories") and memories:
         try:
             with st.spinner("Model generating your coded results..."):
+                progress_bar = st.progress(0, text=f"Coding {len(memories)} memories")
                 messages = [{"role": "system", "content": get_system_prompt()}]  # save process time
                 results, logs = [], []
-                for memory in memories:
+                for i, memory in enumerate(memories):
                     result, message_history, generation_log = code_text(memory, messages)
+                    relative_progress = (i + 1) / len(memories)
+                    progress_bar.progress(relative_progress,
+                                          text=f"Coded {i + 1} of {len(memories)} memories ({relative_progress * 100:.1f}%)")
                     results.append(result)
                     logs.append(generation_log)
+                progress_bar.empty()
                 save_generation_log(multiple_generation_logs=logs)
         except Exception as e:
             handle_generation_error(e)
@@ -281,6 +286,7 @@ def debug_page():
     """
     st.title(f"{DEBUG_EMOJI} This page is for debugging purposes, as a user you can ignore it")
     show_current_config_info()
+
     st.info("Trying the color coding with the example output...")
     formatted_codes, color_coding_legend = get_coding_task_formatted_codes()
     st.caption(f"{GENERAL_COLOR_CODING_LEGEND_TITLE} {color_coding_legend}")
