@@ -65,6 +65,14 @@ def get_model_config_parameters():
     return client, service, base_llm, coding_task
 
 
+def get_generation_kwargs(**kwargs):
+    generation_kwargs = dict(**kwargs)
+    for parameter, value in DEFAULT_GENERATION_PARAMETERS.items():
+        if parameter not in generation_kwargs:
+            generation_kwargs[parameter] = value
+    return generation_kwargs
+
+
 def get_generation_log(service, base_llm, coding_task, messages,
                        generation_kwargs, output, task=DIRECT_CODING_TASK):
     return {
@@ -91,26 +99,45 @@ def save_generation_log(single_generation_log: dict[str, str] = None,
     conn.update(data=df)
 
 
-def code_text(new_message: str, message_history: list[dict[str, str]] = None,
-              temperature: float = 0):
+def code_text(new_message: str, message_history: list[dict[str, str]] = None, **kwargs):
     if message_history is None:
         messages = [{"role": "system", "content": get_system_prompt()}]
     else:
         messages = message_history.copy()
     messages.append({"role": "user", "content": new_message})
-    client, service, base_llm, coding_task = get_model_config_parameters()
-    generation_kwargs = dict(temperature=temperature)
-    output = raw_generation(client, base_llm, messages, generation_kwargs)
+    output, log = generate_with_retries(messages, raw_generation, **kwargs)
     # messages.append({"role": "assistant", "content": output})
-    return output, messages, get_generation_log(service, base_llm, coding_task, messages,
-                                                generation_kwargs, output)
+    return output, messages, log
+
+
+def generate_with_retries(messages, generation_func, task=DIRECT_CODING_TASK, **kwargs):
+    client, service, base_llm, coding_task = get_model_config_parameters()
+    generation_kwargs = get_generation_kwargs(**kwargs)
+    allowed_tries = MAX_ALLOWED_RETRIES
+    output = ""
+    while allowed_tries > 0:
+        if allowed_tries < MAX_ALLOWED_RETRIES:
+            st.warning(f"Failed to generate with {generation_kwargs[MAX_TOKENS_PARAM]} max tokens,"
+                       f"probably due to the model's thinking tokens. Re-trying with more...")
+            generation_kwargs[MAX_TOKENS_PARAM] += MAX_TOKENS_INC_STEP
+        output = generation_func(client, base_llm, messages, generation_kwargs)
+        if output:
+            break
+        allowed_tries -= 1
+    if not output:
+        st.error(f"Failed to generate a response, probably due to the model's thinking tokens."
+                 f"(re-tried {MAX_ALLOWED_RETRIES} times)")
+    log = get_generation_log(service, base_llm, coding_task, messages, generation_kwargs, output, task)
+    return output, log
 
 
 def raw_generation(client, base_llm, messages, generation_kwargs):
     response = client.chat.completions.create(model=base_llm, messages=messages,
                                               **generation_kwargs)
-    output = response.choices[0].message.content
-    return output
+    choice = response.choices[0]
+    if getattr(choice, "finish_reason", None) == "length":
+        return ""
+    return choice.message.content
 
 
 def raw_stream_generation(client, base_llm, messages, generation_kwargs):
@@ -123,7 +150,7 @@ def join_write_stream(stream):
     def generator():
         for chunk in stream:
             try:
-                content = chunk.choices[0].delta.content
+                content = chunk.choices[0].delta.content  # TODO: consider using chunk.choices[0].finish_reason == "length"
                 if content:
                     content_parts.append(content)
                     yield content
@@ -134,12 +161,10 @@ def join_write_stream(stream):
     return "".join(content_parts)
 
 
-def generate_for_chat_with_write_stream(messages: list[dict[str, str]], temperature: float = 0):
+def generate_for_chat_with_write_stream(messages: list[dict[str, str]], **kwargs):
     # used for streaming the answer directly
-    client, service, base_llm, coding_task = get_model_config_parameters()
-    generation_kwargs = dict(temperature=temperature)
-    output = join_write_stream(raw_stream_generation(client, base_llm, messages, generation_kwargs))
-    log = get_generation_log(service, base_llm, coding_task, messages, generation_kwargs, output, CHAT_TASK)
+    generation_func = lambda *args: join_write_stream(raw_stream_generation(*args))
+    output, log = generate_with_retries(messages, generation_func, CHAT_TASK, **kwargs)
     # appending the message to all messages should be outside of assistant scope
     return output, log
 

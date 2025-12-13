@@ -140,12 +140,17 @@ for task in ALL_CODING_TASKS:
 FREE_SERVICE = "TogetherAI"
 PRIVATE_SERVICE = "HuggingFaceHub"
 MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
-MODEL_SERVICES_AVAILABLE_LLMS = {FREE_SERVICE: ["meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"],
-                                 PRIVATE_SERVICE: [
-                                     "meta-llama/Llama-3.3-70B-Instruct",
-                                     # "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",  # uses </think>
-                                     "microsoft/phi-4"
-                                 ]}
+MODEL_SERVICES_AVAILABLE_LLMS = {
+    FREE_SERVICE: [
+        # "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"  # deprecated by TogetherAI
+        "ServiceNow-AI/Apriel-1.6-15b-Thinker"
+    ],
+    PRIVATE_SERVICE: [
+        "meta-llama/Llama-3.3-70B-Instruct",
+        # "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",  # uses <think>
+        "microsoft/phi-4"
+    ]
+}
 MODEL_SERVICE, BASE_LLM, CODING_TASK = "model_service", "base_llm", "coding_task"
 MODEL_CONFIG_KEYS = [MODEL_SERVICE, BASE_LLM, CODING_TASK]
 DEFAULT_MODEL_CONFIG = {MODEL_SERVICE: FREE_SERVICE,
@@ -194,6 +199,19 @@ YOUR ACTUAL ROLE:
 Always maintain a helpful, conversational tone while assisting with this coding task."""
 
 STRICT_OUTPUT_FORMAT_REMINDER = "IMPORTANT! Remember to ONLY output the coded text according to this format, and to NOT add any other notes or explanations!"
+
+# generation parameters
+TEMPERATURE_PARAM = "temperature"
+DEFAULT_TEMPERATURE = 0
+MAX_TOKENS_PARAM = "max_tokens"
+MAX_TOKENS_DEFAULT = 4096  # the default in ServiceNow-AI/Apriel-1.6-15b-Thinker is 2048
+MAX_TOKENS_INC_STEP = 1000
+DEFAULT_GENERATION_PARAMETERS = {
+    TEMPERATURE_PARAM: DEFAULT_TEMPERATURE,
+    MAX_TOKENS_PARAM: MAX_TOKENS_DEFAULT,
+}
+
+MAX_ALLOWED_RETRIES = 5
 
 
 def validate_model_config():
