@@ -2,6 +2,7 @@
 import time
 import pandas as pd
 from together import Together
+from openai import OpenAI
 from huggingface_hub import InferenceClient
 from constants import *
 
@@ -57,7 +58,8 @@ def get_model_config_parameters():
         if service == PRIVATE_SERVICE:
             client = InferenceClient(provider="hf-inference", api_key=st.secrets["HF_API_KEY"])
         else:  # service == FREE_SERVICE
-            client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
+            # client = Together(api_key=st.secrets["TOGETHER_API_KEY"])
+            client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=st.secrets["HF_API_KEY"])
         st.session_state[service] = client
     client = st.session_state[service]
     base_llm = model_config[BASE_LLM]

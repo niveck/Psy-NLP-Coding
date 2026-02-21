@@ -143,7 +143,8 @@ MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
 MODEL_SERVICES_AVAILABLE_LLMS = {
     FREE_SERVICE: [
         # "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"  # deprecated by TogetherAI
-        "ServiceNow-AI/Apriel-1.6-15b-Thinker"
+        # "ServiceNow-AI/Apriel-1.6-15b-Thinker"  # was thinking with too many tokens so moved to Cerebras
+        "openai/gpt-oss-120b:cerebras"
     ],
     PRIVATE_SERVICE: [
         "meta-llama/Llama-3.3-70B-Instruct",

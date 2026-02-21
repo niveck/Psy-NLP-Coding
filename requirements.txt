@@ -9,3 +9,4 @@ openpyxl
 together
 st-gsheets-connection
 huggingface-hub
+openai
