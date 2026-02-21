@@ -137,7 +137,7 @@ for task in ALL_CODING_TASKS:
 
 
 # model config
-FREE_SERVICE = "TogetherAI"
+FREE_SERVICE = "Cerebras"  # "TogetherAI"
 PRIVATE_SERVICE = "HuggingFaceHub"
 MODEL_SERVICES_DESCRIPTION = {FREE_SERVICE: "free", PRIVATE_SERVICE: "private"}
 MODEL_SERVICES_AVAILABLE_LLMS = {
